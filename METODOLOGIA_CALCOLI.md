@@ -1,0 +1,925 @@
+# Metodologia di calcolo — Atlante Stipendio
+
+**Versione documentata:** simulatore v3.2, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
+**Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
+
+---
+
+## 1. Impostazione generale e filosofia del simulatore
+
+Il simulatore osserva la retribuzione del lavoro dipendente privato italiano da due punti di vista collegati:
+
+1. **Crescita e tassazione**: per ciascuna RAL si stimano netto, costo dell'azienda e prelievo marginale associato a un aumento di retribuzione. La pagina isola la **RAL ordinaria**: bonus e benefit sono esclusi da queste curve.
+2. **Stipendio e previdenza**: alla medesima RAL si aggiungono bonus, welfare, buoni pasto, tempo di lavoro, fondo pensione e TFR. Il risultato viene mostrato per anno, per mensilità equivalente e per ora effettivamente lavorata.
+
+Le due viste condividono **una sola RAL**, un solo profilo fiscale e un solo motore di calcolo. La seconda vista imposta opzioni aggiuntive senza sostituire le formule della prima.
+
+L'ordine logico è:
+
+~~~text
+RAL contrattuale
+  + bonus lordo
+  + parte imponibile dei buoni pasto [solo base contributiva/fiscale]
+    -> contributi obbligatori del lavoratore
+    -> premio soggetto a imposta sostitutiva, se spettante
+    -> imponibile IRPEF e detrazioni
+    -> imposte e agevolazioni
+    -> netto monetario
+  + valore nominale di welfare e buoni pasto
+    -> netto e benefit utilizzabili nell'anno
+
+In parallelo:
+  -> contributi obbligatori dell'azienda e INAIL
+  -> contributo aziendale al fondo pensione e solidarietà
+  -> TFR maturato
+    -> costo complessivo aziendale
+~~~
+
+**Tre grandezze non equivalenti**:
+
+- **Disponibilità corrente**: denaro netto più benefit valorizzati al nominale. Non tutti i benefit si convertono liberamente in denaro.
+- **Accantonamenti previdenziali**: contributi al fondo pensione e TFR. Sono valore maturato, ma non disponibilità immediata; il TFR non equivale a un secondo stipendio.
+- **Costo aziendale**: tutto il costo rappresentato dal modello per remunerare e assicurare il lavoratore, inclusi oneri non incassati direttamente dalla persona.
+
+Non si possono sommare indiscriminatamente i subtotali delle tre categorie: alcune voci sono già contenute nelle altre.
+
+## 2. Convenzioni, simboli e ordine di calcolo
+
+Usiamo questi simboli (nomi descrittivi, non variabili aggiuntive nel codice):
+
+| Simbolo | Significato | Variabile nel motore |
+|---|---|---|
+| R | RAL contrattuale annua | ral |
+| B | Bonus lordo annuo | bonus |
+| V | Valore nominale annuo dei buoni | mealTotal |
+| V_imp | Parte imponibile dei buoni | mealTaxable |
+| W | Welfare aziendale esente valorizzato al nominale | welfare |
+| A | Base per contributi obbligatori | base |
+| C_l | Contributi obbligatori lavoratore | contrib |
+| C_d | Contributi obbligatori datore, esclusa INAIL | employer |
+| P_l | Versamento dipendente al fondo | pensionWorker |
+| P_d | Versamento aziendale al fondo | pensionEmployer |
+| Y | Imponibile IRPEF ordinaria | y |
+| I | IRPEF lorda | gross |
+| T | Imposte da pagare, incluso premio sostitutivo | taxes |
+| F | Trasferimenti/bonus fiscali monetari | transfers |
+| N | Netto monetario | net |
+| Q | TFR annuo maturato | tfr |
+| K | Costo complessivo aziendale | cost |
+
+Tutte le formule fondamentali sono **annuali**. I valori mensili e orari si ottengono **dopo** il calcolo annuale, mediante una divisione: non sono buste paga effettive.
+
+Il codice usa numeri JavaScript con precisione floating point; arrotonda soprattutto per visualizzare, non ogni singolo passaggio. Le detrazioni che impiegano rapporti TUIR applicano una **troncatura a quattro decimali** (funzione ratio). Importi e percentuali visibili possono quindi presentare differenze di pochi centesimi per arrotondamento.
+
+Il codice si trova principalmente nelle funzioni **calculate**, **tax**, **workDed**, **familyDed**, **mandatoryContrib**, **timeData**, **packageOptions**, **drawRateChart**, **payComponents** e **newPayCard**.
+
+---
+
+## 3. Parametri incorporati nello snapshot 2026
+
+Sono valori iniziali **modificabili**: descrivono un dipendente privato ordinario senza esoneri specifici e non una determinata azienda.
+
+### 3.1 IRPEF e detrazioni
+
+| Parametro | Valore iniziale |
+|---|---:|
+| Prima aliquota IRPEF, fino a imponibile 28.000 € | 23% |
+| Seconda aliquota, quota fra 28.000 e 50.000 € | 33% |
+| Terza aliquota, quota oltre 50.000 € | 43% |
+| Detrazione lavoro, soglia iniziale fino a 15.000 € | 1.955 € |
+| Base detrazione lavoro nel secondo/terzo tratto | 1.910 € |
+| Maggiorazione da ridurre nel tratto 15.000–28.000 € | 1.190 € |
+| Maggiorazione specifica nel tratto 25.000–35.000 € | 65 € |
+| Detrazione massima da cuneo, secondo tratto | 1.000 € |
+| Trattamento integrativo massimo | 1.200 € |
+
+### 3.2 Contributi e altri parametri
+
+| Parametro | Valore iniziale |
+|---|---:|
+| Contributi lavoratore, aliquota ordinaria | 9,19% |
+| Contributo aggiuntivo lavoratore sopra soglia | 1% |
+| Soglia contributo aggiuntivo nella simulazione | 56.224 € |
+| Contributi datore IVS/pensione | 23,81% |
+| NASpI datore | 1,31% |
+| Fondi interprofessionali datore | 0,30% |
+| Fondo garanzia TFR datore | 0,20% |
+| CUAF datore | 0,68% |
+| Maternità datore | 0,24% |
+| Malattia datore | 2,44% |
+| FIS/altri fondi datore | 0,33% |
+| **Totale contributi datore nel profilo iniziale, esclusa INAIL** | **29,31%** |
+| INAIL, stima separata | 0,40% |
+| Divisore TFR | 13,5 |
+| Recupero contributivo nella stima TFR | 0,50% |
+| Quota personale al fondo, se attivo | 0,55% della RAL |
+| Quota aziendale al fondo, se attivo | 1,55% della RAL |
+| Limite annuo di deducibilità dei contributi al fondo | 5.300 € |
+| Solidarietà a carico dell'azienda sulla quota al fondo | 10% |
+| Premio di risultato: imposta sostitutiva | 1% |
+| Premio di risultato: massimo lordo agevolabile | 5.000 € |
+| Reddito di lavoro dipendente precedente: limite dichiarato | 80.000 € |
+| Buono pasto elettronico, esenzione giornaliera | 10 € |
+| Buono pasto cartaceo, esenzione giornaliera | 4 € |
+
+**Attenzione:** 23,81% è soltanto la quota IVS aziendale, **non** il totale dei contributi che l'azienda versa. Il 29,31% è la somma delle componenti selezionate nel profilo iniziale; **non è un'aliquota universale**. INAIL viene aggiunta separatamente.
+
+I valori percentuali del fondo sono applicati **convenzionalmente all'intera RAL**. I CCNL possono prevedere basi diverse (minimi tabellari, retribuzione utile al TFR ecc.) e subordinare il contributo datoriale a un versamento minimo del dipendente. Il simulatore consente di cambiare le percentuali ma **non verifica automaticamente l'adesione minima prevista dal CCNL**.
+
+---
+
+## 4. Formazione della base contributiva e contributi obbligatori
+
+### 4.1 Base contributiva
+
+La base costruita dal codice è:
+
+~~~text
+A = R + B + V_imp
+~~~
+
+La parte fiscalmente imponibile dei buoni entra nella base contributiva, ma il loro valore nominale **non** è aggiunto alla RAL come denaro incassato.
+
+### 4.2 Lavoratore
+
+~~~text
+C_l = A × aliquota_lavoratore
+    + max(0, A − soglia_aggiuntiva) × aliquota_aggiuntiva
+~~~
+
+Con i parametri iniziali:
+
+~~~text
+C_l = A × 9,19% + max(0, A − 56.224) × 1%
+~~~
+
+Si tratta di una funzione **continua a tratti**: oltre soglia si tassa con l'1% **solo la parte eccedente**, non tutta la retribuzione. Il codice non introduce automaticamente un tetto contributivo universalmente applicabile, né riproduce tutte le quote minori dipendente per FIS/CIGS o altre gestioni.
+
+**Nota per gli sviluppi:** il calcolo usa una soglia annua semplificata; non ricostruisce il meccanismo di versamento e conguaglio mensile del contributo aggiuntivo.
+
+### 4.3 Datore e coperture sociali
+
+Per ciascuna voce contributiva datoriale j:
+
+~~~text
+C_d,j = A × aliquota_datore,j
+C_d   = somma_j C_d,j
+~~~
+
+Nel profilo iniziale:
+
+~~~text
+C_d = A × 29,31%
+INAIL_stimata = A × 0,40%
+~~~
+
+Nel 29,31% sono già ricompresi IVS, NASpI, fondi interprofessionali, Fondo garanzia TFR, CUAF, maternità, malattia e FIS/altri fondi. **Non si deve aggiungere di nuovo il 23,81%.**
+
+I contributi del datore sono **fuori dalla RAL**; quelli del lavoratore sono **già interni alla RAL**. INAIL e le prestazioni di assicurazione sociale rappresentano costi e coperture, non denaro versato nel conto corrente del lavoratore né automaticamente imposte IRPEF.
+
+La contribuzione effettiva dipende da matricola e inquadramento INPS, dimensioni, settore, rapporto, apprendistato, sgravi e fondi applicabili. Gli importi del simulatore sono pertanto **stimati**.
+
+---
+
+## 5. Premi: trattamento ordinario e premio di risultato agevolato
+
+Il bonus è aggiuntivo rispetto alla RAL contrattuale. La **retribuzione lorda erogata** è:
+
+~~~text
+Retribuzione_lorda_erogata = R + B
+~~~
+
+La RAL in senso stretto rimane R; **RAL + bonus** non è una seconda definizione di RAL, bensì il lordo monetario complessivamente corrisposto.
+
+### 5.1 Condizioni per il regime agevolato
+
+La modalità agevolata è applicata solo se sono contemporaneamente selezionati:
+
+1. Premio di risultato agevolato.
+2. Requisiti contrattuali/di legge confermati.
+3. Reddito da lavoro dipendente nell'anno precedente entro la soglia dichiarata (80.000 € nello snapshot).
+
+Queste sono **dichiarazioni dell'utente**, non verifiche documentali del simulatore.
+
+La parte lorda agevolabile è:
+
+~~~text
+B_agev_lordo = min(B, limite_premio_lordo)   [solo se tutte le condizioni sono vere]
+B_agev_lordo = 0                              [altrimenti]
+~~~
+
+La parte soggetta a imposta sostitutiva è calcolata **al netto dei contributi obbligatori imputabili a quella quota**:
+
+~~~text
+C_agev = C_l(R + V_imp + B_agev_lordo) − C_l(R + V_imp)
+
+B_agev_imponibile = max(0, B_agev_lordo − C_agev)
+
+Imposta_sostitutiva = B_agev_imponibile × aliquota_sostitutiva
+~~~
+
+L'eccedenza di bonus rispetto al limite agevolabile confluisce nella normale base IRPEF. I contributi obbligatori sono calcolati su **tutto** il bonus, anche quello agevolato.
+
+Non vengono simulati speciali regimi di **decontribuzione** eventualmente previsti per particolari premi. Se manca una delle condizioni selezionate, tutto il bonus torna alla tassazione ordinaria.
+
+### 5.2 Bonus netto: metodo controfattuale
+
+Nella vista riepilogativa, il **bonus netto aggiuntivo** non si ottiene moltiplicando B per (1 − un'aliquota presunta). Si procede invece per differenza tra due scenari:
+
+~~~text
+N_bonus = N(R, bonus B, senza buoni e welfare)
+        − N(R, bonus 0, senza buoni e welfare)
+~~~
+
+È un effetto incrementale: considera l'eventuale variazione di scaglioni, detrazioni, contributi, trattamento integrativo e imposte. **Non equivale necessariamente al netto del bonus in un cedolino specifico.**
+
+### 5.3 Il bonus entra nel TFR?
+
+L'input avanzato **Bonus incluso nella base TFR** determina se B è sommato a R nel calcolo del TFR (v. §10). L'opzione iniziale è **No**. Non va dedotta automaticamente dal regime fiscale agevolato: la base utile al TFR dipende da contratto e natura dell'erogazione.
+
+---
+
+## 6. Previdenza complementare: versamenti, deducibilità e costo
+
+La previdenza complementare può essere attivata o disattivata. Quando è disattivata:
+
+~~~text
+P_l = 0
+P_d = 0
+solidarietà = 0
+TFR_al_fondo = 0
+~~~
+
+Con fondo attivo:
+
+~~~text
+P_l = R × percentuale_personale_fondo
+P_d = R × percentuale_aziendale_fondo
+
+Versamenti_deducibili = min(limite_annuo, P_l + P_d)
+Versamenti_non_dedotti = max(0, P_l + P_d − limite_annuo)
+
+Solidarietà_azienda = P_d × percentuale_solidarietà
+~~~
+
+Il dipendente **rinuncia a una quota di netto monetario** per versarla nel fondo. Quella quota rimane **risparmio del dipendente**, non un'imposta. Il datore aggiunge un proprio contributo, che entra nei costi aziendali e nel patrimonio previdenziale del lavoratore.
+
+La contribuzione aziendale transita nella costruzione dell'imponibile fiscale con una corrispondente deduzione entro il limite disponibile (vedi §7). Il TFR versato nel fondo **non usa il limite ordinario di deducibilità**.
+
+Il contributo di solidarietà del 10% iniziale si applica alla **quota aziendale versata al fondo**, non è accreditato al fondo pensione e non riduce il netto del lavoratore.
+
+**Limiti:** non si simulano ulteriori contributi versati autonomamente, conversioni del premio in previdenza, tutte le eccezioni di deducibilità, agevolazioni sulla base del CCNL né eventuali misure compensative per l'impresa che conferisce TFR.
+
+---
+
+## 7. Imponibile IRPEF e imposta lorda
+
+Con A, C_l, B_agev_imponibile e i contributi al fondo definiti sopra:
+
+~~~text
+Y = max(0,
+        A
+      − C_l
+      − B_agev_imponibile
+      + P_d
+      − Versamenti_deducibili)
+~~~
+
+Questa è **la base IRPEF ordinaria**; non coincide con la RAL.
+
+L'IRPEF lorda si calcola per **scaglioni marginali**:
+
+~~~text
+I(Y) = min(Y, b1) × a1
+     + max(0, min(Y, b2) − b1) × a2
+     + max(0, Y − b2) × a3
+~~~
+
+con b1 = 28.000 €, b2 = 50.000 €, a1 = 23%, a2 = 33%, a3 = 43% nello snapshot.
+
+Passando da 49.000 a 50.000 € di **RAL** non si attraversa necessariamente la soglia IRPEF dei 50.000 €, perché essa riguarda **Y**, che è generalmente inferiore alla RAL. La quota di reddito imponibile eccedente lo scaglione, non tutto il reddito, è tassata all'aliquota superiore.
+
+---
+
+## 8. Detrazioni d'imposta
+
+### 8.1 Detrazione da lavoro dipendente
+
+La funzione **workDed(Y)** è a tratti:
+
+~~~text
+Y <= 15.000:
+    D_l = 1.955
+
+15.000 < Y <= 28.000:
+    D_l = 1.910 + 1.190 × trunc4((28.000 − Y) / 13.000)
+
+28.000 < Y <= 50.000:
+    D_l = 1.910 × trunc4((50.000 − Y) / 22.000)
+
+Y > 50.000:
+    D_l = 0
+
+Inoltre, se 25.000 < Y <= 35.000:
+    D_l = D_l + 65
+~~~
+
+I parametri numerici sono modificabili nel file. Il codice applica la detrazione al reddito fiscale Y ed esclude il caso di base contributiva nulla.
+
+### 8.2 Familiari a carico
+
+**Coniuge:** la funzione per il coniuge è a tratti, secondo Y:
+
+~~~text
+0 < Y <= 15.000:
+    D_c = 800 − 110 × trunc4(Y / 15.000)
+
+15.000 < Y <= 40.000:
+    D_c = 690 + maggiorazioni puntuali:
+      +10 se 29.000 < Y <= 29.200
+      +20 se 29.200 < Y <= 34.700
+      +30 se 34.700 < Y <= 35.000
+      +20 se 35.000 < Y <= 35.100
+      +10 se 35.100 < Y <= 35.200
+
+40.000 < Y < 80.000:
+    D_c = 690 × trunc4((80.000 − Y) / 40.000)
+
+Altrimenti:
+    D_c = 0
+~~~
+
+**Figli ammessi alla detrazione:** per n figli e quota scelta s (50% o 100%):
+
+~~~text
+Limite_figli = 95.000 + 15.000 × (n − 1)
+
+D_figli = 950 × n × s × trunc4((Limite_figli − Y) / Limite_figli)
+~~~
+
+La funzione restituisce zero quando non ci sono figli. La quota è unica per tutti i figli; con coniuge fiscalmente a carico il codice forza s = 100%. Si assumono dodici mesi di spettanza. Il numero immesso si riferisce ai **figli ammessi alla detrazione IRPEF**, non a tutti i figli del nucleo familiare: l'Assegno Unico non è un componente dello stipendio simulato.
+
+Non sono riprodotte casistiche familiari particolari, periodi infrannuali, altri redditi, diverse percentuali per ciascun figlio o verifiche anagrafiche automatiche.
+
+### 8.3 Capienza fiscale e ordine di applicazione
+
+Il codice applica le detrazioni nell'ordine:
+
+~~~text
+D_l_utilizzata     = min(I, D_l)                 [se opzione attiva]
+D_fam_utilizzata   = min(max(0, I − D_l_utilizzata), D_fam)
+D_cuneo_utilizzata = min(max(0, I − D_l_utilizzata − D_fam_utilizzata),
+                        D_cuneo_teorica)
+
+IRPEF_netta = max(0, I − D_l_utilizzata − D_fam_utilizzata − D_cuneo_utilizzata)
+~~~
+
+La detrazione non sfruttata per **incapienza** non diventa automaticamente un trasferimento monetario. Questo ordine di utilizzo è rilevante anche per le simulazioni controfattuali e il trattamento integrativo.
+
+---
+
+## 9. Misure di cuneo fiscale e trattamento integrativo
+
+### 9.1 Somma non imponibile fino a 20.000 €
+
+Quando la misura è attiva:
+
+~~~text
+Se Y <= 8.500:          Somma_cuneo = Y × 7,1%
+Se 8.500 < Y <= 15.000: Somma_cuneo = Y × 5,3%
+Se 15.000 < Y <= 20.000: Somma_cuneo = Y × 4,8%
+Se Y > 20.000:          Somma_cuneo = 0
+~~~
+
+La percentuale è applicata, nel codice, a **Y intero** nel tratto considerato, non alla sola differenza sopra soglia. Questa somma non è un contributo pensionistico, né una detrazione IRPEF: è un trasferimento che aumenta il netto monetario.
+
+### 9.2 Detrazione cuneo oltre 20.000 € fino a 40.000 €
+
+~~~text
+Se 20.000 < Y <= 32.000: D_cuneo_teorica = 1.000
+Se 32.000 < Y <= 40.000: D_cuneo_teorica = 1.000 × (40.000 − Y)/8.000
+Altrimenti:              D_cuneo_teorica = 0
+~~~
+
+Questa è una **detrazione**: riduce l'IRPEF fino alla capienza dopo le altre detrazioni, ma non produce automaticamente un rimborso eccedente l'imposta.
+
+### 9.3 Trattamento integrativo
+
+La funzione parte da un massimo iniziale di 1.200 €. Se il trattamento integrativo è abilitato, il codice applica:
+
+~~~text
+Se Y <= 15.000:
+    TI = 1.200 se I(Y + B_agev_imponibile) > D_l_teorica − 75
+         altrimenti 0
+
+Se 15.000 < Y <= 28.000:
+    TI = min(1.200, max(0, D_l_teorica + D_fam_teorica − I(Y)))
+
+Se Y > 28.000:
+    TI = 0
+~~~
+
+La verifica nel primo tratto comprende nella **base del test** anche l'imponibile del premio a imposta sostitutiva, mentre la soglia di reddito è confrontata con Y. Nel secondo tratto il modello **non** incorpora tutte le ulteriori detrazioni per oneri e spese pregresse che possono incidere sul trattamento spettante.
+
+Trattamento integrativo e somma cuneo sono aggregati dal motore in:
+
+~~~text
+F = TI + Somma_cuneo
+~~~
+
+Nel riepilogo del costo del lavoro, quando si parla di **imposte nette dei benefici fiscali**, si sottrae F dalle imposte pagate: è una convenzione di lettura del **prelievo netto**, non un'affermazione che i trasferimenti siano imposte negative in senso giuridico.
+
+---
+
+## 10. Addizionali regionale e comunale
+
+Le addizionali sono calcolate soltanto se **IRPEF netta > 0**. Le regole incorporano un profilo **Roma–Lazio**; per le altre regioni la selezione non scarica automaticamente le delibere locali.
+
+### 10.1 Roma–Lazio incorporata nel codice
+
+~~~text
+Regionale Lazio:
+  Se Y <= 28.000:
+      Regione = 1,73% × Y
+  Altrimenti:
+      Regione = 1,73% × 15.000 + 3,33% × (Y − 15.000)
+      − 60 € se 28.001 <= Y <= 30.000
+
+Comunale Roma:
+  Se Y <= 14.000: Comune = 0
+  Altrimenti:      Comune = 0,9% × Y
+~~~
+
+Il superamento dell'esenzione comunale **non** determina nel modello una tassazione della sola differenza sopra 14.000 €: applica la percentuale all'intero imponibile Y. Queste formule descrivono esattamente lo snapshot implementato; per usi fiscali puntuali vanno confrontate con le delibere dell'anno pertinente.
+
+### 10.2 Altre regioni e comuni
+
+La selezione geografica diversa da Roma attiva un profilo manuale con quattro input:
+
+- Aliquota regionale unica.
+- Aliquota comunale unica.
+- Esenzione regionale fino a un determinato reddito.
+- Esenzione comunale fino a un determinato reddito.
+
+Il calcolo effettuato è:
+
+~~~text
+Regione = Y × aliquota_regionale    se Y > esenzione_regionale, altrimenti 0
+Comune  = Y × aliquota_comunale     se Y > esenzione_comunale, altrimenti 0
+~~~
+
+Le aliquote iniziali di questi campi sono **0%**: se non sono compilate, il netto può risultare sovrastimato. Una singola aliquota con soglia di esenzione **non riproduce** necessariamente aliquote progressive, esenzioni condizionate o regole specifiche degli altri enti locali.
+
+**Importante:** la scelta di una regione non individua automaticamente il comune; la simulazione fuori Roma è una **approssimazione manuale**, non un calcolo territoriale certificato.
+
+Riferimenti esterni disponibili nell'interfaccia: [MEF — addizionali comunali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm) e [MEF — addizionali regionali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm).
+
+---
+
+## 11. Imposte finali e netto monetario
+
+La somma delle imposte effettivamente incluse dal motore è:
+
+~~~text
+T = IRPEF_netta + Add_regionale + Add_comunale + Imposta_sostitutiva_premio
+~~~
+
+Il netto monetario annuo è:
+
+~~~text
+N = R + B − C_l − P_l − T + F
+~~~
+
+**Il netto monetario non include** welfare, valore nominale dei buoni pasto, contributi aziendali al fondo o TFR.
+
+L'importo complessivo **utilizzabile nell'anno** mostrato come primo indicatore della Dashboard 2 è invece:
+
+~~~text
+Netto_e_benefit_utilizzabili = N + W + V
+~~~
+
+Welfare e buoni pasto sono valorizzati **al nominale**, ma non sono necessariamente fungibili con il denaro. Il netto monetario N ha già scontato il prelievo su eventuali buoni eccedenti la soglia di esenzione.
+
+### 11.1 Scomposizione della voce principale
+
+Per dare un contenuto comprensibile alla prima voce della dashboard, il simulatore procede per tre calcoli successivi:
+
+~~~text
+N_RAL = N(R, senza bonus, senza buoni, senza welfare)
+
+N_bonus = N(R, con bonus, senza buoni, senza welfare) − N_RAL
+
+Welfare_utilizzabile = W
+
+Buoni_pasto_netti_stimati = V + N(R, con bonus e buoni) −
+                            N(R, con bonus ma senza buoni)
+
+Totale = N_RAL + N_bonus + Welfare_utilizzabile
+         + Buoni_pasto_netti_stimati
+       = N + W + V
+~~~
+
+**Perché il netto dei buoni può essere minore del valore nominale?** I buoni non entrano direttamente nella voce denaro netto, ma la loro **parte imponibile** può comportare ulteriori contributi e imposte, riducendo N. Il valore finale viene quindi calcolato per differenza, senza sommare impropriamente la parte imponibile alla retribuzione monetaria.
+
+**Precisazione metodologica:** la scomposizione è una **attribuzione sequenziale** degli effetti: prima RAL, poi bonus, poi buoni. Se sono presenti soglie e agevolazioni, l'effetto del singolo componente può dipendere dall'ordine di inserimento. Le quattro righe si riconciliano con il totale, ma non sono effetti causali autonomi o invarianti al percorso.
+
+---
+
+## 12. TFR: maturazione, destinazione e recupero
+
+### 12.1 Maturazione nell'anno
+
+Il modello costruisce una base utile:
+
+~~~text
+Base_TFR = R + B     se il bonus è incluso nel TFR
+Base_TFR = R         se il bonus è escluso
+~~~
+
+e calcola:
+
+~~~text
+Q = max(0,
+        Base_TFR / divisore_TFR
+        − A × aliquota_recupero_TFR)
+~~~
+
+Nello snapshot:
+
+~~~text
+Q = max(0, Base_TFR / 13,5 − A × 0,50%)
+~~~
+
+Il recupero dello 0,50% è una correzione della **quota TFR stimata**, non una nuova trattenuta applicata al netto monetario. Welfare e valore esente dei buoni non sono sommati alla base TFR.
+
+**Limite specifico dell'implementazione:** il termine di recupero usa A (RAL + bonus + buoni imponibili) anche quando il bonus è escluso dalla base TFR. È una convenzione semplificativa del codice e può produrre una stima differente da quella contrattualmente corretta. Non vengono simulate rivalutazioni del TFR maturato in anni precedenti.
+
+### 12.2 Destinazione
+
+Se il fondo è attivo e l'opzione **Conferito al fondo pensione** è selezionata:
+
+~~~text
+TFR_al_fondo = Q
+TFR_fuori_fondo = 0
+~~~
+
+Altrimenti:
+
+~~~text
+TFR_al_fondo = 0
+TFR_fuori_fondo = Q
+~~~
+
+La destinazione **non cambia Q né il costo aziendale del TFR** nel modello; cambia dove viene contabilizzato l'accantonamento. Il regime ordinario può corrispondere all'azienda o al Fondo di Tesoreria INPS, secondo il caso.
+
+---
+
+## 13. Fondo pensione e TFR: valore futuro netto illustrativo
+
+Il simulatore calcola prima il **valore lordo annuo destinato al fondo**:
+
+~~~text
+Contributi_fondo_senza_TFR = P_l + P_d
+
+Fondo_lordo = P_l + P_d + TFR_al_fondo
+~~~
+
+La base fiscalmente assoggettata all'aliquota illustrativa viene approssimata come:
+
+~~~text
+Base_imponibile_fondo_illustrativa
+    = max(0, min(Fondo_lordo,
+                 Versamenti_deducibili + TFR_al_fondo))
+
+Netto_fondo_illustrativo
+    = Fondo_lordo − Base_imponibile_fondo_illustrativa
+      × aliquota_uscita_fondo
+~~~
+
+L'aliquota è selezionabile fra **15%, 12%, 9% e 23%**. Il 15% è il valore iniziale, non il 9%. L'aliquota del 9% è un possibile esito per determinate prestazioni pensionistiche con elevata anzianità; il 23% può essere rilevante per alcune anticipazioni o riscatti. **Non esiste un'aliquota unica applicabile a tutti i prelievi.**
+
+Se il TFR rimane fuori dal fondo, il simulatore mostra separatamente:
+
+~~~text
+Netto_TFR_ordinario_illustrativo
+    = TFR_fuori_fondo × (1 − aliquota_TFR_manualizzata)
+~~~
+
+L'aliquota iniziale del secondo scenario è **23% modificabile**. Non viene ricostruita la tassazione separata effettiva.
+
+**Limiti essenziali delle due stime:** riguardano **il flusso di un singolo anno**, non un montante accumulato nel tempo; non includono rendimenti, rivalutazioni, anticipazioni già ricevute, imposte sui rendimenti, specifici periodi di partecipazione, regimi transitori e ogni distinzione fiscale delle prestazioni. Non rappresentano il capitale immediatamente prelevabile. La parte non dedotta dei contributi è esclusa convenzionalmente dalla base indicata, senza ricostruire tutti gli adempimenti fiscali richiesti.
+
+Il fondo complementare e la pensione pubblica **non sono equivalenti**: i contributi obbligatori FPLD non sono un conto individuale immediatamente riscattabile da sommare al netto futuro.
+
+---
+
+## 14. Buoni pasto, welfare e giorni lavorativi
+
+### 14.1 Giorni e ore
+
+La sezione sull'orario utilizza per convenzione **261 giorni lunedì–venerdì nel 2026** e una settimana su **5 giorni**.
+
+~~~text
+Ore_al_giorno = Ore_settimanali / 5
+
+Giorni_effettivi_anno
+    = max(0, 261 − Festività_e_patrono − Ferie_ed_ex_festività)
+
+Ore_effettivamente_lavorate
+    = Giorni_effettivi_anno × Ore_al_giorno − Ore_altri_permessi
+
+Ore_contrattuali_anno = Ore_settimanali × 52
+~~~
+
+Impostazioni iniziali: **40 ore/settimana**, **29 giorni** di ferie + ex festività utilizzate, **32 ore** di altri permessi e **9,8 giorni** di festività/patrono come media convenzionale modificabile.
+
+L'input dei permessi in ore **esclude** le ex festività già inserite nel conteggio dei giorni. Le formule non ricostruiscono ogni calendario reale, turnazione, part-time verticale, malattia o maternità.
+
+### 14.2 Smart working senza buono
+
+Il numero di giorni di smart working **senza erogazione del buono** è convertito in una frazione di giorni potenzialmente lavorati:
+
+~~~text
+Smart_fraction =
+    giorni_smart_settimanali / 5         [modalità settimanale]
+    giorni_smart_mensili / (261 / 12)    [modalità mensile]
+
+Giorni_smart_senza_buono
+    = Giorni_effettivi_anno × min(1, Smart_fraction)
+
+Giorni_con_buono
+    = max(0, round(Giorni_effettivi_anno − Giorni_smart_senza_buono))
+~~~
+
+Le **ferie** sono già escluse dai giorni potenzialmente lavorati. Gli **altri permessi orari** non riducono i giorni dei buoni nella semplificazione adottata. Lo smart working non elimina automaticamente il buono: l'input misura proprio i **giorni di smart senza buono**.
+
+### 14.3 Valore e imponibilità
+
+~~~text
+V = Giorni_con_buono × Valore_buono_giornaliero
+
+V_imp = Giorni_con_buono
+        × max(0, Valore_buono_giornaliero − Soglia_esente)
+~~~
+
+La soglia iniziale è 10 €/giorno per buoni elettronici, 4 €/giorno per cartacei. L'eventuale eccedenza incrementa A e può incrementare contributi e imposte, pur non essendo retribuzione monetaria.
+
+Il welfare W è assunto **interamente esente**; non sono simulati fringe benefit imponibili, limiti condizionati o particolari regimi di conversione.
+
+---
+
+## 15. Costo aziendale complessivo
+
+La formula del motore è:
+
+~~~text
+K = (R + B)
+  + C_d
+  + INAIL_stimata
+  + Q
+  + V
+  + W
+  + P_d
+  + Solidarietà_azienda
+~~~
+
+L'ordine è intenzionale:
+
+- R + B è la retribuzione lorda monetaria;
+- C_d e INAIL sono obblighi e coperture dell'azienda;
+- Q è il TFR maturato **una sola volta**, indipendentemente dalla destinazione;
+- V e W sono benefit al valore nominale;
+- P_d è la quota aziendale al fondo pensione;
+- la solidarietà aziendale è un costo ulteriore, **non** un versamento al fondo.
+
+**Non** si sommano nuovamente C_l e P_l a K: entrambi sono già compresi nella RAL, rispettivamente come contributo obbligatorio e come parte di retribuzione destinata a risparmio previdenziale.
+
+### 15.1 Identità di riconciliazione
+
+Definendo:
+
+~~~text
+Disponibilità_corrente = N + V + W
+
+Prelievo_fiscale_netto = T − F
+
+Contributi_e_assicurazioni_obbligatorie
+    = C_l + C_d + INAIL_stimata + Solidarietà_azienda
+
+Versamenti_fondo_senza_TFR = P_l + P_d
+~~~
+
+la formula del codice implica esattamente:
+
+~~~text
+K = Disponibilità_corrente
+  + Prelievo_fiscale_netto
+  + Contributi_e_assicurazioni_obbligatorie
+  + Versamenti_fondo_senza_TFR
+  + Q
+~~~
+
+L'identità è **contabile nel perimetro del modello**: si ottiene sostituendo la definizione di N e cancellando le voci già comprese nella RAL. Non implica che il lavoratore possa monetizzare tutte le assicurazioni sociali o il TFR.
+
+**Nota di interpretazione:** il prelievo fiscale netto può essere inferiore alle imposte pagate, o anche negativo, se F è elevato. Le categorie «imposte nette» e «contributi e assicurazioni» non sono automaticamente convertibili in valore dei servizi pubblici ricevuti da una singola persona.
+
+---
+
+## 16. Annuale, mensile e orario
+
+Il calcolo fiscale è **sempre annuo**. Le tre colonne nella Dashboard 2 applicano il medesimo denominatore d a **tutte le voci**, così da essere confrontabili:
+
+~~~text
+Colonna annuale: d = 1
+Colonna mensile: d = 12, 13 oppure 14 [12 iniziale]
+Colonna oraria:  d = Ore_effettivamente_lavorate
+
+Valore_mostrato(voce) = Valore_annuo(voce) / d
+~~~
+
+Di conseguenza:
+
+- **/12, /13, /14** sono medie equivalenti di un valore annuo, non una ricostruzione dei cedolini di dicembre/giugno/luglio;
+- la colonna per ora misura il rapporto fra il valore annuo e **ore effettivamente lavorate**, tenendo conto delle assenze parametrizzate;
+- anche contributi, imposte, TFR e costo aziendale sono divisi per lo stesso d, perché si sta osservando l'**equivalente** per mensilità o ora, non l'esborso effettivo del singolo periodo;
+- in questa versione la presentazione non tenta di stimare l'effettiva tassazione delle tredicesime e quattordicesime.
+
+La RAL contrattuale compare come **riferimento**, mentre il primo indicatore principale è il **netto monetario più benefit utilizzabili**.
+
+---
+
+## 17. Analisi della crescita della RAL e aliquota marginale effettiva
+
+### 17.1 Due scenari della Dashboard 1
+
+Per l'analisi marginale vengono calcolati due risultati con **profilo fiscale invariato**, senza bonus, welfare e buoni:
+
+~~~text
+Risultato_iniziale = calculate(R, profilo)
+Risultato_finale   = calculate(R + aumento, profilo)
+~~~
+
+L'aumento **standard** è 1.000 €; quello **personalizzato** è selezionabile fino a 20.000 €. Le variazioni del netto, dei contributi, delle imposte e del costo aziendale sono le differenze fra i risultati.
+
+Queste sono **variazioni finite**, non derivate infinitesime. Una curva a passo 1.000 € può intercettare una soglia dentro un intervallo: in quel punto la variazione rappresenta una **media sull'intervallo**.
+
+### 17.2 Aliquota marginale fiscale e contributiva
+
+Con incremento ΔR > 0:
+
+~~~text
+ΔN   = N(R + ΔR) − N(R)
+ΔP_l = P_l(R + ΔR) − P_l(R)
+
+Aliquota_marginale_effettiva
+    = (ΔR − ΔN − ΔP_l) / ΔR
+
+    = (ΔC_l + ΔT − ΔF) / ΔR
+~~~
+
+Il fondo pensione **è sottratto dal numeratore** perché non deve essere classificato come imposizione.
+
+Nella curva rappresentata a passo fisso ΔR = 1.000 € il valore in percentuale è:
+
+~~~text
+Aliquota_1000_percento
+    = 100 × (1.000 − ΔN − ΔP_l) / 1.000
+~~~
+
+Altre curve selezionabili:
+
+~~~text
+Quota_non_disponibile_subito (%) = 100 × (ΔR − ΔN) / ΔR
+Solo_imposte_marginali (%)       = 100 × (ΔT − ΔF) / ΔR
+Solo_contributi_lavoratore (%)   = 100 × ΔC_l / ΔR
+Solo_versamento_fondo (%)        = 100 × ΔP_l / ΔR
+Extra_costo_datore_su_RAL (%)    = 100 × (ΔK − ΔR) / ΔR
+~~~
+
+L'ultima curva non è un'aliquota fiscale del lavoratore: comprende la variazione dei costi aziendali **oltre la RAL**, incluso l'eventuale TFR incrementale.
+
+### 17.3 Perché il passaggio dello scaglione IRPEF può essere poco visibile
+
+Lo scaglione superiore del 43% inizia quando **Y supera 50.000 €**, non quando la RAL supera 50.000 €. Inoltre, nella fascia immediatamente precedente, la detrazione lavoro si riduce con l'aumento del reddito: parte del prelievo effettivo è già attribuibile alla **perdita di detrazione**. Quando questa si azzera, l'aumento dell'aliquota IRPEF nominale può essere parzialmente compensato dalla fine di tale perdita.
+
+L'aliquota marginale effettiva osservata è quindi il risultato **congiunto** di aliquote, contributi, addizionali, detrazioni e trasferimenti: non coincide in generale con 23%, 33% o 43%.
+
+### 17.4 Soglie e interazione col grafico
+
+Il grafico ricava la **RAL che corrisponde a ciascuna soglia di imponibile** risolvendo numericamente:
+
+~~~text
+Y(RAL_soglia) = 28.000 oppure 50.000
+~~~
+
+tramite ricerca binaria sul motore di calcolo (funzione chartThresholds). È più corretto che collocare arbitrariamente le soglie in corrispondenza di RAL 28.000 e 50.000 €.
+
+Le linee grigie indicano tali soglie; la linea verde indica la **RAL dopo l'aumento personalizzato**, modificabile trascinando il suo punto superiore. L'intervallo RAL iniziale–RAL dopo aumento è visualizzato sull'asse orizzontale. Le curve dei valori annui costituiscono una visualizzazione alternativa del medesimo profilo.
+
+Le soglie sono cercate numericamente in un intervallo fino a 120.000 €; la grafica mostra il dominio RAL fino a 100.000 €. Quando la RAL dopo l'aumento supera 100.000 €, il valore finale è segnalato come **fuori scala** e il segno grafico viene limitato al bordo.
+
+**Attenzione interpretativa:** la ricerca binaria presuppone una relazione tra RAL e Y sufficientemente regolare/monotona nel profilo selezionato. Modifiche estreme ai parametri possono rendere meno affidabile la localizzazione.
+
+---
+
+## 18. Rapporti riepilogativi e tabella RAL
+
+Per una RAL selezionata, la Dashboard 1 mostra fra l'altro:
+
+~~~text
+Netto / imponibile_IRPEF = N / Y
+Netto / RAL              = N / R
+Netto / costo_azienda    = N / K
+~~~
+
+La prima misura **non** è un'aliquota di tassazione: mette al numeratore un netto monetario (con eventuali trasferimenti) e al denominatore la base IRPEF. Serve come confronto, ma non va letta come «quota di imponibile restituita» in senso strettamente fiscale.
+
+Nel confronto ogni **5.000 €** il motore ricalcola tutto per R = 0, 5.000, ..., 100.000 € e riporta i valori annuali. La colonna prelievo/RAL usa:
+
+~~~text
+Prelievo_medio_su_RAL = (C_l + T − F) / R
+~~~
+
+per R > 0; a R = 0 il rapporto non è definito e non viene mostrato. La quota personale al fondo è esclusa dal **prelievo**, poiché è un investimento previdenziale.
+
+La funzione di esportazione CSV salva una griglia di valori calcolati; i campi utilizzano il separatore punto e virgola e valori decimali convertiti in formato italiano.
+
+---
+
+## 19. Perimetro, esclusioni e punti di attenzione tecnica
+
+### Esclusioni strutturali
+
+Il simulatore non ricostruisce:
+
+- cedolini mensili e conguagli effettivi, ratei di 13ª/14ª, rapporto iniziato o terminato nell'anno;
+- altri redditi personali, deduzioni/detrazioni per spese private, tutte le situazioni familiari;
+- ogni CCNL, livello, apprendistato, minimi contributivi e sgravi datoriali;
+- aliquote territoriali progressive ed esenzioni locali non incorporate;
+- straordinari, turni, lavoro notturno, malattia, maternità, trasferte e indennità;
+- regimi fiscali specifici dei premi diversi dalla configurazione semplificata;
+- rivalutazione pluriennale del TFR, rendimento del fondo pensione, fiscalità dei rendimenti e disponibilità effettiva delle prestazioni;
+- eventuali costi amministrativi, commissioni e IVA non rappresentati nel costo dei benefit;
+- il valore economico attuariale individuale di pensione pubblica, NASpI, malattia, maternità e altre assicurazioni.
+
+### Questioni da non nascondere sotto un numero preciso
+
+1. **Aliquote datore**: 29,31% + INAIL è un esempio modificabile, non una previsione esatta per ogni datore.
+2. **Fuori Roma**: addizionali inizialmente nulle se non inserite; le aliquote uniche non equivalgono a un motore comunale completo.
+3. **TFR**: il recupero dello 0,50% usa A, anche quando il bonus non è utile al TFR; verificare su cedolini reali.
+4. **Fondo**: quote calcolate sull'intera RAL e spettanza aziendale non verificata rispetto al versamento minimo contrattuale.
+5. **Tassazione futura**: 15/12/9/23% e aliquota TFR manuale producono **scenari su un flusso annuale**, non una liquidazione certa.
+6. **Bonus**: le condizioni agevolative sono flag dell'utente; non equivalgono a un controllo della documentazione contrattuale.
+7. **Buoni**: la valorizzazione «netta» è residuale, dipende anche dalla presenza del bonus e dalle altre condizioni fiscali.
+8. **Lavoro orario**: i valori sono divisi per ore effettive convenzionali, non per ore certificate da un sistema presenze.
+9. **Rotture di soglia**: la progressività delle detrazioni, del cuneo e dei trasferimenti può generare discontinuità nella curva marginale.
+10. **Snapshot**: nessuna fonte online viene interrogata automaticamente per aggiornare la normativa fiscale del simulatore.
+
+### Controlli raccomandati nelle revisioni
+
+Prima di modificare una formula, verificare almeno:
+
+- **Identità del netto**: N = R + B − C_l − P_l − T + F.
+- **Identità della disponibilità**: N + V + W coincide con la somma delle quattro componenti del riepilogo.
+- **Identità del costo**: K coincide con la somma delle voci nella §15 e con la riconciliazione di §15.1.
+- **Fondo OFF**: P_l, P_d, solidarietà e TFR al fondo risultano zero; il TFR ordinario rimane contabilizzato.
+- **TFR ON/OFF**: cambia soltanto la destinazione; Q resta lo stesso.
+- **Bonus agevolato ON/OFF**: limite applicato al **premio lordo**, imposta sostitutiva sulla quota imponibile dopo contributi.
+- **Buono elettronico/cartaceo**: V non cambia a parità di valore nominale; V_imp può cambiare e modificare N.
+- **RAL sincronizzata**: l'analisi marginale resta priva di bonus/benefit e la Dashboard 2 li aggiunge separatamente.
+- **Mensilità**: cambiare 12/13/14 deve cambiare solo il denominatore, non i valori annuali.
+- **Aumenti**: il risultato per ΔR = 1.000 € coincide con la differenza fra due chiamate del motore, e la curva fiscale marginale **non** include P_l.
+- **Ripristino e salvataggio**: la copia HTML conserva gli input, i flag e le selezioni principali.
+
+Questi sono **test di coerenza interna**. Non sostituiscono una verifica con fonti normative vigenti e casi reali di busta paga.
+
+---
+
+## 20. Fonti di riferimento e manutenzione
+
+Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e fonti» dell'HTML. Per aggiornamenti successivi, consultare in particolare:
+
+- [Ministero del Lavoro — misure della legge di bilancio 2026](https://www.lavoro.gov.it/notizie/pagine/legge-di-bilancio-2026-le-principali-misure-lavoratori-imprese-e-famiglie)
+- [TUIR art. 13 — detrazioni lavoro](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.articolo.numero=13&atto.codiceRedazionale=086U0917&atto.dataPubblicazioneGazzetta=1986-12-31&vigenza=2026-01-01)
+- [TUIR art. 12 — detrazioni familiari](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.articolo.numero=12&atto.codiceRedazionale=086U0917&atto.dataPubblicazioneGazzetta=1986-12-31&vigenza=2026-01-01)
+- [INPS — aliquote e variabilità dei contributi](https://www.inps.it/it/it/inps-comunica/diritti-e-obblighi-in-materia-di-sicurezza-sociale-nell-unione-e/per-le-imprese/aliquote-contributive.html)
+- [INPS — Fondo di integrazione salariale](https://www.inps.it/it/it/dettaglio-scheda.it.schede-servizio-strumento.schede-servizi.50262.fondo-d-integrazione-salariale-fis-.html)
+- [MEF — addizionali comunali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm)
+- [MEF — addizionali regionali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm)
+- [Ministero del Lavoro — previdenza complementare](https://lavoro.gov.it/previdenza-complementare/educazione-previdenziale/come-funziona-e-quanto-costa)
+- [Fon.Te. — contribuzione](https://www.fondofonte.it/adesione/contribuzione/)
+- [Cometa](https://www.cometafondo.it/prestazioni-contribuzione/tfr/) e [Previmoda](https://www.previmoda.it/come-aderire/) — riferimenti su contribuzione contrattuale
+
+**Procedura di manutenzione raccomandata:**
+
+1. Modificare il codice del motore e i parametri del nuovo anno fiscale.
+2. Verificare le regole con le fonti ufficiali, incluse le date di applicazione.
+3. Aggiornare **questo documento** insieme alla logica effettiva, non soltanto alle etichette.
+4. Eseguire controlli di riconciliazione e casi ai confini degli scaglioni.
+5. Aggiornare la versione del simulatore e indicare gli eventuali comportamenti cambiati.
+
+---
+
+**Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
+**Stato:** metodologia della **v3.2**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
