@@ -852,7 +852,7 @@ Il **cuneo marginale** qui definito ha al denominatore l'intero ΔK, che include
 
 **Maniglie.** La RAL di partenza si sposta cliccando o trascinando nel grafico; l'aumento si trascina dal punto verde posto **sopra** l'area del grafico, così le due maniglie restano separabili anche quando si sovrappongono in orizzontale.
 
-**Due netti, un solo motore.** La pagina 01 mostra il **netto dalla sola RAL** (N senza bonus, buoni e welfare), che coincide con la prima riga di ① nella pagina 02. Un riquadro di collegamento mostra il passaggio: netto utilizzabile della pagina 02 = netto dalla sola RAL + bonus netto + welfare + buoni pasto netti. Le curve marginali restano sulla sola RAL, perché bonus e benefit hanno regimi propri e confonderebbero la lettura dell'aliquota.
+**Due netti, un solo motore.** La pagina 01 mostra il **netto dalla sola RAL** (N senza bonus, buoni e welfare), che coincide con la prima riga di ① nella pagina 02. Il passaggio è: netto utilizzabile della pagina 02 = netto dalla sola RAL + bonus netto + welfare + buoni pasto netti. Le curve marginali restano sulla sola RAL, perché bonus e benefit hanno regimi propri e confonderebbero la lettura dell'aliquota.
 
 **Riepiloghi a destra del grafico e box sottostanti.** Per lo scenario +1.000 € e per l'aumento personalizzato ΔR_p si mostrano: ΔN, ΔN/ΔR, ΔN/ΔK, prelievo marginale e ΔK. I box di dettaglio aggiungono la scomposizione completa di ΔK (barra + tabella in € , % di ΔR e % di ΔK) e i livelli medi prima/dopo (RAL, N, K, N/R, N/K).
 
