@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.2, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.3, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -471,6 +471,8 @@ Comune  = Y × aliquota_comunale     se Y > esenzione_comunale, altrimenti 0
 
 Le aliquote iniziali di questi campi sono **0%**: se non sono compilate, il netto può risultare sovrastimato. Una singola aliquota con soglia di esenzione **non riproduce** necessariamente aliquote progressive, esenzioni condizionate o regole specifiche degli altri enti locali.
 
+**Interfaccia (v3.3).** Il menu separa «Calcolo incorporato» (Roma) da «Aliquote da inserire · dati MEF» (le 20 regioni; per il Lazio, «comuni diversi da Roma»). Scegliendo un territorio manuale i quattro campi compaiono subito sotto il menu, con i collegamenti MEF; se entrambe le aliquote sono a zero, il menu e l'intestazione del profilo mostrano un avviso.
+
 **Importante:** la scelta di una regione non individua automaticamente il comune; la simulazione fuori Roma è una **approssimazione manuale**, non un calcolo territoriale certificato.
 
 Riferimenti esterni disponibili nell'interfaccia: [MEF — addizionali comunali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm) e [MEF — addizionali regionali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm).
@@ -720,6 +722,23 @@ K = Disponibilità_corrente
   + Q
 ~~~
 
+**Uso nell'interfaccia (v3.3).** Questa identità è la struttura delle tre card della Dashboard 2 e dei box di aumento della Dashboard 1:
+
+~~~text
+① Netto utilizzabile          = N + V + W
+② Previdenza differita, lordo = P_l + P_d + Q          (fondo + TFR, dovunque destinato)
+③ Imposte e contributi        = (T − F) + C_l + (C_d + INAIL_stimata) + Solidarietà_azienda
+Costo aziendale K             = ① + ② + ③
+~~~
+
+La sezione ③ contiene **solo** prelievi: i contributi e le imposte riferibili a fondo e TFR (es. Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale) sono lì, mentre i versamenti al fondo e il TFR stanno una sola volta in ②. Le righe «netto ipotetico» di fondo e TFR (§13) sono informative e non entrano nei totali. La barra di composizione mostra cinque colori: netto (①), previdenza (②), imposte nette, contributi lavoratore, contributi azienda+INAIL+solidarietà (③). Se una componente è negativa (es. F > T a redditi bassi) la barra rappresenta solo le parti positive e lo segnala.
+
+Le stesse grandezze, in differenza, formano la scomposizione di un aumento (funzione `deltaParts`):
+
+~~~text
+ΔK = ΔN + Δ(V+W) + (ΔP_l + ΔP_d + ΔQ) + Δ(T − F) + ΔC_l + Δ(C_d + INAIL + Solidarietà)
+~~~
+
 L'identità è **contabile nel perimetro del modello**: si ottiene sostituendo la definizione di N e cancellando le voci già comprese nella RAL. Non implica che il lavoratore possa monetizzare tutte le assicurazioni sociali o il TFR.
 
 **Nota di interpretazione:** il prelievo fiscale netto può essere inferiore alle imposte pagate, o anche negativo, se F è elevato. Le categorie «imposte nette» e «contributi e assicurazioni» non sono automaticamente convertibili in valore dei servizi pubblici ricevuti da una singola persona.
@@ -745,7 +764,16 @@ Di conseguenza:
 - anche contributi, imposte, TFR e costo aziendale sono divisi per lo stesso d, perché si sta osservando l'**equivalente** per mensilità o ora, non l'esborso effettivo del singolo periodo;
 - in questa versione la presentazione non tenta di stimare l'effettiva tassazione delle tredicesime e quattordicesime.
 
-La RAL contrattuale compare come **riferimento**, mentre il primo indicatore principale è il **netto monetario più benefit utilizzabili**.
+La RAL contrattuale compare come **riferimento**, mentre il primo indicatore principale è il **netto monetario più benefit utilizzabili**. Sotto il valore principale sono mostrati due rapporti, identici nelle tre colonne perché indipendenti dal denominatore d:
+
+~~~text
+Netto_utilizzabile / RAL           = (N + V + W) / R
+Netto_utilizzabile / costo_azienda = (N + V + W) / K
+~~~
+
+Il primo può superare la lettura «netto/RAL» della Dashboard 1 perché include benefit e bonus netto al numeratore ma non il bonus lordo al denominatore.
+
+**Altri elementi della Dashboard 2 (v3.3).** Il riquadro TFR (accanto a quello del bonus) mostra Q, la destinazione e l'opzione «bonus incluso nella base TFR». Le aliquote illustrative di uscita (§13) sono in una riga dedicata sotto le card. Restano due approfondimenti: il costo aziendale per voce di spesa (con le singole aliquote datoriali e la quota di ogni voce su K) e il prospetto analitico lordo→netto e calcolo delle imposte. Le tabelle «benefit e disponibilità», «benefit», «risparmio previdenziale» e «costo» del prospetto sono state rimosse perché duplicavano le sezioni ① e ②.
 
 ---
 
@@ -787,17 +815,31 @@ Aliquota_1000_percento
     = 100 × (1.000 − ΔN − ΔP_l) / 1.000
 ~~~
 
-Altre curve selezionabili:
+Curve del grafico (v3.3), raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €):
 
 ~~~text
-Quota_non_disponibile_subito (%) = 100 × (ΔR − ΔN) / ΔR
-Solo_imposte_marginali (%)       = 100 × (ΔT − ΔF) / ΔR
-Solo_contributi_lavoratore (%)   = 100 × ΔC_l / ΔR
-Solo_versamento_fondo (%)        = 100 × ΔP_l / ΔR
-Extra_costo_datore_su_RAL (%)    = 100 × (ΔK − ΔR) / ΔR
+Lavoratore · dentro la RAL (denominatore ΔR)
+  Prelievo marginale          = (Δ(T − F) + ΔC_l) / ΔR        [predefinita]
+    di cui imposte nette      = Δ(T − F) / ΔR                 [predefinita]
+    di cui contributi lavor.  = ΔC_l / ΔR                     [predefinita]
+  Quota personale al fondo    = ΔP_l / ΔR                     [opzionale, solo fondo attivo]
+
+Azienda · fuori dalla RAL
+  Contributi azienda e INAIL  = Δ(C_d + INAIL + Solidarietà) / ΔR   [predefinita]
+  Cuneo marginale sul costo   = Δ(T − F + C_l + C_d + INAIL + Sol.) / ΔK  [opzionale]
+
+Quanto resta
+  Netto / ΔRAL                = ΔN / ΔR                       [opzionale]
+  Netto / Δcosto aziendale    = ΔN / ΔK                       [opzionale]
 ~~~
 
-L'ultima curva non è un'aliquota fiscale del lavoratore: comprende la variazione dei costi aziendali **oltre la RAL**, incluso l'eventuale TFR incrementale.
+Per costruzione: Prelievo marginale = imposte nette + contributi lavoratore, e Netto/ΔRAL = 1 − Prelievo marginale − ΔP_l/ΔR.
+
+Il **cuneo marginale** qui definito ha al denominatore l'intero ΔK, che include TFR e quota aziendale al fondo: è coerente con la scomposizione ①②③ ma **non coincide con il tax wedge OCSE**, che misura il costo del lavoro senza TFR e previdenza complementare. Le curve «contributi azienda» e «netto/Δcosto» sostituiscono la precedente «costo aggiuntivo oltre la RAL», che mescolava prelievi e retribuzione differita; è stata rimossa anche la curva «imposte + contributi + fondo», ricavabile come 100% − Netto/ΔRAL.
+
+**Scala verticale.** Il grafico marginale taglia i valori sotto −30% (tipicamente l'ingresso del trattamento integrativo a RAL molto basse, dove ΔF può superare ΔR) e lo segnala con il minimo e la RAL corrispondente. Le tacche sono arrotondate a passi 1/2/2,5/5 × 10ⁿ.
+
+**Riepiloghi a destra del grafico e box sottostanti.** Per lo scenario +1.000 € e per l'aumento personalizzato ΔR_p si mostrano: ΔN, ΔN/ΔR, ΔN/ΔK, prelievo marginale e ΔK. I box di dettaglio aggiungono la scomposizione completa di ΔK (barra + tabella in € , % di ΔR e % di ΔK) e i livelli medi prima/dopo (RAL, N, K, N/R, N/K).
 
 ### 17.3 Perché il passaggio dello scaglione IRPEF può essere poco visibile
 
@@ -815,7 +857,7 @@ Y(RAL_soglia) = 28.000 oppure 50.000
 
 tramite ricerca binaria sul motore di calcolo (funzione chartThresholds). È più corretto che collocare arbitrariamente le soglie in corrispondenza di RAL 28.000 e 50.000 €.
 
-Le linee grigie indicano tali soglie; la linea verde indica la **RAL dopo l'aumento personalizzato**, modificabile trascinando il suo punto superiore. L'intervallo RAL iniziale–RAL dopo aumento è visualizzato sull'asse orizzontale. Le curve dei valori annui costituiscono una visualizzazione alternativa del medesimo profilo.
+Le linee grigie indicano tali soglie (anche nel grafico dei valori annui, che dalla v3.3 include la serie «imposte nette» T − F); la linea verde indica la **RAL dopo l'aumento personalizzato**, modificabile trascinando il suo punto superiore. L'intervallo RAL iniziale–RAL dopo aumento è visualizzato sull'asse orizzontale. Le curve dei valori annui costituiscono una visualizzazione alternativa del medesimo profilo.
 
 Le soglie sono cercate numericamente in un intervallo fino a 120.000 €; la grafica mostra il dominio RAL fino a 100.000 €. Quando la RAL dopo l'aumento supera 100.000 €, il valore finale è segnalato come **fuori scala** e il segno grafico viene limitato al bordo.
 
@@ -828,12 +870,12 @@ Le soglie sono cercate numericamente in un intervallo fino a 120.000 €; la gra
 Per una RAL selezionata, la Dashboard 1 mostra fra l'altro:
 
 ~~~text
-Netto / imponibile_IRPEF = N / Y
+Aliquota_media           = (C_l + T − F) / R
 Netto / RAL              = N / R
 Netto / costo_azienda    = N / K
 ~~~
 
-La prima misura **non** è un'aliquota di tassazione: mette al numeratore un netto monetario (con eventuali trasferimenti) e al denominatore la base IRPEF. Serve come confronto, ma non va letta come «quota di imponibile restituita» in senso strettamente fiscale.
+Dalla v3.3 l'aliquota media sostituisce il rapporto Netto / imponibile IRPEF, che non era un'aliquota e confondeva basi diverse: affiancata alla curva marginale permette il confronto **media vs marginale** sullo stesso numeratore (imposte nette + contributi del lavoratore, fondo escluso).
 
 Nel confronto ogni **5.000 €** il motore ricalcola tutto per R = 0, 5.000, ..., 100.000 € e riporta i valori annuali. La colonna prelievo/RAL usa:
 
@@ -889,6 +931,7 @@ Prima di modificare una formula, verificare almeno:
 - **Buono elettronico/cartaceo**: V non cambia a parità di valore nominale; V_imp può cambiare e modificare N.
 - **RAL sincronizzata**: l'analisi marginale resta priva di bonus/benefit e la Dashboard 2 li aggiunge separatamente.
 - **Mensilità**: cambiare 12/13/14 deve cambiare solo il denominatore, non i valori annuali.
+- **Composizione ①+②+③**: per ogni RAL e scenario la somma delle tre sezioni coincide con K, e la scomposizione di ΔK coincide con il costo aggiuntivo (verificato in v3.3 su 63 combinazioni di RAL, bonus, benefit, fondo, TFR, familiari e territorio).
 - **Aumenti**: il risultato per ΔR = 1.000 € coincide con la differenza fra due chiamate del motore, e la curva fiscale marginale **non** include P_l.
 - **Ripristino e salvataggio**: la copia HTML conserva gli input, i flag e le selezioni principali.
 
@@ -922,4 +965,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.2**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.3**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+
+---
+
+## Registro modifiche
+
+**v3.3** — nessuna formula del motore `calculate` è cambiata; cambiano presentazione e indicatori derivati.
+- Grafico marginale: scomposizione predefinita del prelievo (imposte nette + contributi lavoratore) e contributi a carico dell'azienda; nuove curve opzionali cuneo marginale sul costo, netto/ΔRAL, netto/Δcosto; legenda raggruppata con valori alla RAL selezionata; scala con tacche arrotondate e taglio sotto −30%.
+- Riepiloghi laterali e box degli aumenti con netto/ΔRAL, netto/Δcosto e scomposizione completa di ΔK.
+- Dashboard 1: aliquota media al posto di netto/imponibile IRPEF; serie «imposte nette» nel grafico dei valori annui.
+- Dashboard 2: card in tre sezioni ①②③ che si sommano al costo aziendale (rimosse dalla sezione costo le righe «versamenti al fondo» e «TFR», già in ②); rapporti netto/RAL e netto/costo; riquadro TFR accanto al bonus; approfondimenti ridotti a costo per voce e prospetto lordo→netto.
+- Territori: menu raggruppato e pannello addizionali accanto al menu; corretto il testo che indicava valori iniziali 2% e 0,8% (sono 0%).

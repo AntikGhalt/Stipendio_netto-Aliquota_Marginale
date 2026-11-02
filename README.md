@@ -6,8 +6,10 @@ Simulatore interattivo di stipendio e tassazione marginale in Italia (snapshot n
 Apri `index.html` nel browser. Non sono necessari server, build, npm o librerie esterne.
 
 Il progetto contiene due viste collegate:
-- **Crescita e tassazione:** prelievo marginale sulla RAL, grafico alternativo degli importi annui, simulazioni degli aumenti.
-- **Stipendio e previdenza:** retribuzione, bonus, buoni pasto, welfare, costo aziendale, versamenti previdenziali e TFR, confrontati su base annuale, mensile e oraria.
+- **Crescita e tassazione:** prelievo marginale sulla RAL scomposto in imposte nette e contributi (lavoratore e azienda), grafico alternativo degli importi annui, simulazioni degli aumenti con netto/ΔRAL e netto/Δcosto.
+- **Stipendio e previdenza:** su base annuale, mensile e oraria, il costo aziendale scomposto in ① netto utilizzabile, ② previdenza differita (fondo e TFR) e ③ imposte e contributi.
+
+Le formule sono documentate in [METODOLOGIA_CALCOLI.md](./METODOLOGIA_CALCOLI.md).
 
 ## Parametri e limiti
 - Il profilo fiscale e la RAL sono condivisi.
