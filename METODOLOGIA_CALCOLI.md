@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.4, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.5, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -736,7 +736,7 @@ G  = Imposte_future_stimate = Base_imponibile_fondo_illustrativa × aliquota_usc
 Costo aziendale K              = ① + ② + ③  (= 100%)
 ~~~
 
-Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
+La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
 
 Nell'interfaccia le tre sezioni sono **chiuse di base** e mostrano accanto il totale e la quota sul costo; aprirne una la apre nelle tre colonne. La barra di composizione mostra sei colori: netto (①), previdenza netta (②), imposte nette, imposte future stimate, contributi lavoratore, contributi azienda+INAIL+solidarietà (③). Se una componente è negativa (es. F > T a redditi bassi) la barra rappresenta solo le parti positive e lo segnala.
 
@@ -822,7 +822,9 @@ Aliquota_1000_percento
     = 100 × (1.000 − ΔN − ΔP_l) / 1.000
 ~~~
 
-Curve del grafico, raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €). Dalla v3.4 un interruttore sceglie la **prospettiva**: «Quanto resta in tasca» (predefinita, solo gruppo «Quanto resta», attiva solo Netto/Δcosto) oppure «Cuneo» (gruppi lavoratore e azienda, attive prelievo marginale, sue due componenti, contributi azienda e cuneo).
+Curve del grafico, raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €). Dalla v3.4 un interruttore sceglie la **prospettiva**: «Quanto resta in tasca» (predefinita, solo gruppo «Quanto resta», attiva solo Netto/Δcosto) oppure «Cuneo» (gruppi lavoratore e azienda; attive di base solo il prelievo marginale e la quota personale al fondo, le altre si accendono dalla legenda).
+
+**Unità dell'asse (v3.5).** Le curve sono espresse in **euro su ogni 1.000 € in più** (di RAL o di costo aziendale, secondo la curva): il valore in euro è la frazione × 1.000, quindi 619 € equivale a un'aliquota del 61,9%. I riepiloghi laterali e i box restano anche in percentuale.
 
 ~~~text
 Lavoratore · dentro la RAL (denominatore ΔR)
@@ -844,7 +846,7 @@ Per costruzione: Prelievo marginale = imposte nette + contributi lavoratore, e N
 
 Il **cuneo marginale** qui definito ha al denominatore l'intero ΔK, che include TFR e quota aziendale al fondo: è coerente con la scomposizione ①②③ ma **non coincide con il tax wedge OCSE**, che misura il costo del lavoro senza TFR e previdenza complementare. Le curve «contributi azienda» e «netto/Δcosto» sostituiscono la precedente «costo aggiuntivo oltre la RAL», che mescolava prelievi e retribuzione differita; è stata rimossa anche la curva «imposte + contributi + fondo», ricavabile come 100% − Netto/ΔRAL.
 
-**Scala verticale.** Il grafico marginale è limitato fra −30% e 110%; ogni uscita dalla scala è segnata da un triangolo con il valore e la RAL.
+**Scala verticale.** Dalla v3.5 la scala comprende sempre tutti i valori delle curve visibili, senza tagli, con tacche arrotondate.
 
 **Lo scalino intorno a 9.000–10.000 € di RAL è reale, non un artefatto di calcolo.** Il trattamento integrativo (1.200 €) spetta nel primo tratto solo se I > D_l − 75 (§9.3), cioè da circa 8.200 € di imponibile: superata la soglia, il netto aumenta di colpo di 1.200 €, quindi su +1.000 € di RAL ΔN > ΔR (prelievo marginale negativo, netto/ΔRAL > 100%, e anche ΔN > ΔK). Subito prima, la somma cuneo passa dal 7,1% al 5,3% di tutto Y a 8.500 € (§9.1), con uno scalino opposto. Il passo di 1.000 € spalma su un intervallo ciò che nella norma avviene in un euro. È rilevante solo per redditi annui molto bassi (part-time, anno incompleto). Le tacche sono arrotondate a passi 1/2/2,5/5 × 10ⁿ.
 
@@ -978,11 +980,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.4**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.5**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v3.5**
+- Asse del grafico marginale in euro su 1.000 € e scala senza tagli; vista «Cuneo» con attivi solo prelievo marginale e quota personale al fondo; legenda dei valori annui nello stesso stile, con importi alla RAL selezionata.
+- Pagina 02: rimosso il rapporto sulla RAL accanto a quello sul costo; selettore «Percentuali su: costo aziendale | RAL» per tutte le quote delle card.
 
 **v3.4**
 - ② al netto delle imposte future stimate, spostate in ③; solidarietà accorpata ai contributi azienda e INAIL; sezioni ①②③ richiudibili con totale e quota affiancati; «= 100%» sul costo.
