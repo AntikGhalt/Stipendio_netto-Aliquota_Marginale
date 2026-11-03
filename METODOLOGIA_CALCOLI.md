@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.5, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.6, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -636,7 +636,7 @@ Ore_effettivamente_lavorate
 Ore_contrattuali_anno = Ore_settimanali × 52
 ~~~
 
-Impostazioni iniziali: **40 ore/settimana**, **29 giorni** di ferie + ex festività utilizzate, **32 ore** di altri permessi e **9,8 giorni** di festività/patrono come media convenzionale modificabile.
+Impostazioni iniziali: RAL **30.000 €**, **40 ore/settimana**, **27 giorni** di ferie + ex festività utilizzate, **32 ore** di altri permessi, **1 giorno di smart working a settimana senza buono** e **9,8 giorni** di festività/patrono come media convenzionale modificabile.
 
 L'input dei permessi in ore **esclude** le ex festività già inserite nel conteggio dei giorni. Le formule non ricostruiscono ogni calendario reale, turnazione, part-time verticale, malattia o maternità.
 
@@ -729,14 +729,19 @@ K = Disponibilità_corrente
 ~~~text
 G  = Imposte_future_stimate = Base_imponibile_fondo_illustrativa × aliquota_uscita_fondo
                             + TFR_fuori_fondo × aliquota_TFR_manualizzata        (§13)
+IVS_d = A × aliquota_IVS_datore                       (23,81% nel profilo iniziale)
 
-① Netto utilizzabile           = N + V + W
-② Previdenza, netto stimato    = P_l + P_d + Q − G      (fondo + TFR, dovunque destinato)
-③ Imposte e contributi         = (T − F) + G + C_l + (C_d + INAIL_stimata + Solidarietà_azienda)
-Costo aziendale K              = ① + ② + ③  (= 100%)
+① Netto utilizzabile                 = N + V + W
+② Previdenza, netto stimato          = P_l + P_d + Q − G
+③ Contributi pensionistici IVS       = C_l + IVS_d
+④ Imposte e assicurazioni sociali    = (T − F) + G + (C_d − IVS_d) + INAIL_stimata + Solidarietà_azienda
+Costo aziendale K                    = ① + ② + ③ + ④
 ~~~
 
-La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
+**Perché IVS separata (v3.6).** Nel sistema contributivo l'aliquota di computo del lavoro dipendente è il 33% (23,81% azienda + 9,19% lavoratore): l'intera quota IVS viene accreditata sul montante individuale, che determina la pensione. Invalidità e superstiti sono finanziate dalla stessa contribuzione e non hanno un'aliquota separata. Il legame fra versato e prestazione è quindi diretto, ma non è un risparmio: la gestione è a ripartizione e il valore dipende da rivalutazione (PIL nominale), coefficienti di trasformazione ed età di uscita, fissati per legge. Il simulatore non stima quel valore. Il contributo aggiuntivo dell'1% oltre soglia è giuridicamente IVS ma non aumenta l'aliquota di computo; è incluso in ③ per semplicità e segnalato nella nota informativa. Le altre aliquote datoriali (NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR), l'INAIL e la solidarietà sul fondo finanziano coperture e servizi senza accumulo individuale: sono in ④ con le imposte.
+
+
+La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). Le sezioni ③ e ④ della v3.6 sostituiscono la precedente sezione unica «Imposte e contributi». Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
 
 Nell'interfaccia le tre sezioni sono **chiuse di base** e mostrano accanto il totale e la quota sul costo; aprirne una la apre nelle tre colonne. La barra di composizione mostra sei colori: netto (①), previdenza netta (②), imposte nette, imposte future stimate, contributi lavoratore, contributi azienda+INAIL+solidarietà (③). Se una componente è negativa (es. F > T a redditi bassi) la barra rappresenta solo le parti positive e lo segnala.
 
@@ -980,11 +985,16 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.5**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.6**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v3.6**
+- Sezione ③ «Contributi pensionistici IVS» (parte lavoratore e parte azienda, blu) separata da ④ «Imposte e assicurazioni sociali» (arancione); stessa scomposizione nei box degli aumenti della pagina 01.
+- Decimali a grandezza piena nella card oraria.
+- Valori iniziali: RAL 30.000 €, 27 giorni di ferie ed ex festività, 1 giorno di smart working a settimana.
 
 **v3.5**
 - Asse del grafico marginale in euro su 1.000 € e scala senza tagli; vista «Cuneo» con attivi solo prelievo marginale e quota personale al fondo; legenda dei valori annui nello stesso stile, con importi alla RAL selezionata.
