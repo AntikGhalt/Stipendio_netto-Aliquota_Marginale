@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.7, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.8, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -555,7 +555,7 @@ Q = max(0, Base_TFR / 13,5 − A × 0,50%)
 
 Il recupero dello 0,50% è una correzione della **quota TFR stimata**, non una nuova trattenuta applicata al netto monetario. Welfare e valore esente dei buoni non sono sommati alla base TFR.
 
-**Limite specifico dell'implementazione:** il termine di recupero usa A (RAL + bonus + buoni imponibili) anche quando il bonus è escluso dalla base TFR. È una convenzione semplificativa del codice e può produrre una stima differente da quella contrattualmente corretta. Non vengono simulate rivalutazioni del TFR maturato in anni precedenti.
+**Base del recupero (verificata in v3.8):** lo 0,50% è calcolato sulla retribuzione imponibile ai fini previdenziali dell'anno, cioè su A (RAL + bonus + buoni imponibili), anche quando il bonus non entra nella base del TFR. È la regola di legge (art. 3 L. 297/1982), non una semplificazione. Il contributo è già compreso nell'IVS a carico dell'azienda e viene recuperato sulla quota TFR: nel costo aziendale compare una sola volta. Non vengono simulate rivalutazioni del TFR maturato in anni precedenti.
 
 ### 12.2 Destinazione
 
@@ -738,7 +738,7 @@ IVS_d = A × aliquota_IVS_datore                       (23,81% nel profilo inizi
 Costo aziendale K                    = ① + ② + ③ + ④
 ~~~
 
-**Perché IVS separata (v3.6).** Nel sistema contributivo l'aliquota di computo del lavoro dipendente è il 33% (23,81% azienda + 9,19% lavoratore): l'intera quota IVS viene accreditata sul montante individuale, che determina la pensione. Invalidità e superstiti sono finanziate dalla stessa contribuzione e non hanno un'aliquota separata. Il legame fra versato e prestazione è quindi diretto, ma non è un risparmio: la gestione è a ripartizione e il valore dipende da rivalutazione (PIL nominale), coefficienti di trasformazione ed età di uscita, fissati per legge. Il simulatore non stima quel valore. Il contributo aggiuntivo dell'1% oltre soglia è giuridicamente IVS ma non aumenta l'aliquota di computo; è incluso in ③ per semplicità e segnalato nella nota informativa. Le altre aliquote datoriali (NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR), l'INAIL e la solidarietà sul fondo finanziano coperture e servizi senza accumulo individuale: sono in ④ con le imposte.
+**Perché IVS separata (v3.6).** Nel sistema contributivo l'aliquota di computo del lavoro dipendente è il 33% (23,81% azienda + 9,19% lavoratore): l'intera quota IVS viene accreditata sul montante individuale, che determina la pensione. Invalidità e superstiti sono finanziate dalla stessa contribuzione e non hanno un'aliquota separata. Il legame fra versato e prestazione è quindi diretto, ma non è un risparmio: la gestione è a ripartizione e il valore dipende da rivalutazione (PIL nominale), coefficienti di trasformazione ed età di uscita, fissati per legge. Il simulatore non stima quel valore. Il contributo aggiuntivo dell'1% oltre la prima fascia (56.224 € nel 2026) è giuridicamente IVS ed è incluso in ③; non è stata trovata una fonte ufficiale che chiarisca se accresca il montante, e la nota informativa lo segnala come non verificato. Le altre aliquote datoriali (NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR), l'INAIL e la solidarietà sul fondo finanziano coperture e servizi senza accumulo individuale: sono in ④ con le imposte.
 
 
 La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). **Valore per te (v3.7).** Un selettore unico per le tre card sceglie il valore principale: ① (netto utilizzabile), ① + ② (con la previdenza complementare e il TFR, al netto stimato) oppure ① + ② + ③ (con i contributi pensionistici IVS). Sono ammesse solo somme progressive perché le sezioni sono ordinate dalla più disponibile alla meno certa; ④ è sempre esclusa. Nella barra di composizione le parti escluse sono sbiadite. ③ e ④ compaiono nella barra come blocchi di colore unico e mostrano le sfumature delle singole voci solo quando la sezione è aperta.
@@ -931,7 +931,7 @@ Il simulatore non ricostruisce:
 
 1. **Aliquote datore**: 29,31% + INAIL è un esempio modificabile, non una previsione esatta per ogni datore.
 2. **Fuori Roma**: addizionali inizialmente nulle se non inserite; le aliquote uniche non equivalgono a un motore comunale completo.
-3. **TFR**: il recupero dello 0,50% usa A, anche quando il bonus non è utile al TFR; verificare su cedolini reali.
+3. **TFR**: il recupero dello 0,50% usa A (imponibile previdenziale), anche quando il bonus non è utile al TFR: è la regola di legge; restano fuori rivalutazioni e anni precedenti.
 4. **Fondo**: quote calcolate sull'intera RAL e spettanza aziendale non verificata rispetto al versamento minimo contrattuale.
 5. **Tassazione futura**: 15/12/9/23% e aliquota TFR manuale producono **scenari su un flusso annuale**, non una liquidazione certa.
 6. **Bonus**: le condizioni agevolative sono flag dell'utente; non equivalgono a un controllo della documentazione contrattuale.
@@ -987,11 +987,16 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.7**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.8**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v3.8**
+- Campo svuotato = 0 (nessun errore; il valore 0 viene scritto quando si esce dal campo). Passo minimo 1 per frecce e pulsanti, tranne nei parametri fiscali.
+- Barra di composizione senza spostamenti quando si apre una sezione; «100%» senza decimale; campi della retribuzione allineati.
+- Controllo generale dei calcoli: costo e netto ricostruiti a mano coincidono con il motore al centesimo; verificate sulle fonti ufficiali l'addizionale Lazio 2026 (1,73% fino a 28.000 €; oltre, 1,73% fino a 15.000 € e 3,33% sul resto; detrazione 60 € fra 28.001 e 30.000 €), la soglia dell'1% aggiuntivo (56.224 €) e la base del recupero 0,50% sul TFR.
 
 **v3.7**
 - Selettore «Valore per te: ① · ①+② · ①+②+③»; barra con colori pieni per ③ e ④, sfumature solo a sezione aperta.

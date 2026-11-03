@@ -147,8 +147,8 @@
 .raise-kpi span{font-size:11px;color:var(--muted)}
 .raise-kpi.main{background:#edf7f3;border-color:#b3d5c7}.raise-kpi.main strong{color:#176c55}
 .comp-caption{font-size:11px;font-weight:750;color:#52657e;margin-top:10px}
-.comp-bar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:#eef2f6;margin:6px 0 8px;gap:1px}
-.comp-bar span{min-width:2px}
+.comp-bar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:#eef2f6;margin:6px 0 8px;gap:0}
+.comp-bar span{min-width:0}.comp-bar span+span{box-shadow:inset 1px 0 0 #ffffffb3}
 .comp-neg{font-size:11px;margin:0 0 6px}
 .comp-table td:first-child{white-space:nowrap}.comp-table .total td{font-weight:750;border-top:2px solid #b7cbdc;background:#f3f7fb}
 .pay-view .pay-ratios{display:flex;gap:8px;margin:10px 0 2px}
@@ -235,6 +235,9 @@
 /* v3.7 */
 .comp-bar span.faded{opacity:.28}
 .paytitle-controls{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
+
+/* v3.7.1: campi della retribuzione allineati */
+#package .fields.four .field>label,#package .fields.four .field-heading{min-height:28px;display:flex;align-items:center}
 </style></head><body>
 <header class="top"><div class="tophead"><div><div class="brand">Atlante / Finanza personale</div><h1>Lo stipendio, voce per voce.</h1><p class="subtitle">Dalla RAL al netto, dal tempo lavorato al valore del tuo pacchetto.</p></div><div class="download-box"><div class="tag">ITALIA · SNAPSHOT 2026</div><button class="btn secondary download-button" id="downloadHtml" type="button">↓ Scarica HTML</button><p class="download-note">Salva una copia del simulatore con tutti i dati inseriti, da riaprire e modificare.</p></div></div></header><div class="sticky-nav"><nav class="tabs" aria-label="Sezioni del simulatore"><button class="tab active" data-page="curves" aria-pressed="true">01 · Crescita e tassazione</button><button class="tab" data-page="package" aria-pressed="false">02 · Stipendio e previdenza</button></nav><button class="top-link" id="backToTop" type="button" aria-label="Torna all’inizio" title="Torna all’inizio" hidden>↑</button></div>
 <main><details class="card profile"><summary>Profilo fiscale e contributivo <small id="profileLabel"></small></summary><div class="fields four">
@@ -290,7 +293,7 @@
 <li><a href="https://infoprecompilata.agenziaentrate.gov.it/portale/quadro-c-lavoro-dipendente" target="_blank" rel="noopener">Agenzia delle Entrate · Quadro C</a> — trattamento integrativo; <a href="https://www.fiscooggi.it/rubrica/normativa-e-prassi/articolo/legge-bilancio-2025-approvazione-definitiva-alle-camere" target="_blank" rel="noopener">FiscoOggi · Bilancio 2025</a> — cuneo fiscale.</li>
 <li><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=08" target="_blank" rel="noopener">MEF · Addizionale Lazio 2026</a> e <a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/risultato.htm?anno=2026&amp;cc=H501&amp;lista=1&amp;pagina=lazio.htm&amp;pr=RM&amp;r=1" target="_blank" rel="noopener">MEF · Roma 2026</a>.</li>
 <li><a href="https://www.ancebrescia.it/wp-content/uploads/2026/02/01_02_02-INPS-Circolare-minimale-circolare.pdf" target="_blank" rel="noopener">INPS · Circolare n. 6 del 30 gennaio 2026 (PDF)</a>, soglia contributo aggiuntivo. <a href="https://www.inps.it/it/it/inps-comunica/diritti-e-obblighi-in-materia-di-sicurezza-sociale-nell-unione-e/per-le-imprese/aliquote-contributive.html" target="_blank" rel="noopener">INPS · Aliquote contributive e variabilità dei profili</a>.</li></ul></details>
-<footer class="foot">Atlante Stipendio · v3.7 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
+<footer class="foot">Atlante Stipendio · v3.8 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
 <script>
 'use strict';
 const SNAP={pensionWorker:0.55,pensionEmployer:1.55,pensionCap:5300,pensionSolidarity:10,worker:9.19,employerIvs:23.81,employerNaspi:1.31,employerInterprof:0.30,employerTfrFund:0.20,employerCuaf:0.68,employerMaternity:0.24,employerSickness:2.44,employerFis:0.33,inail:0.4,extra:1,extraFrom:56224,tfrDiv:13.5,tfrRecovery:0.5,r1:23,r2:33,r3:43,b1:28000,b2:50000,workLow:1955,workBase:1910,workAdd:1190,workExtra:65,wedgeAmount:1000,tiAmount:1200,pdrRate:1,pdrLimit:5000,pdrIncome:80000,mealElectronic:10,mealPaper:4,reg:0,com:0,regEx:0,comEx:0};
@@ -301,7 +304,7 @@ const LOCAL=[['reg','Addizionale regionale unica (%)',0,10],['com','Addizionale 
 const $=id=>document.getElementById(id),num=id=>Number($(id).value),on=id=>$(id).checked;
 const eur=(x,d=0)=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',useGrouping:'always',minimumFractionDigits:d,maximumFractionDigits:d}).format(x);
 const fmt=(x,d=0)=>new Intl.NumberFormat('it-IT',{maximumFractionDigits:d,minimumFractionDigits:d}).format(x);
-const pct=x=>fmt(x*100,1)+'%'; const ratio=x=>Math.trunc(Math.max(0,x)*1e4+1e-8)/1e4;
+const pct=x=>(Math.abs(Math.round(x*1000)/10)===100?fmt(Math.round(x*100)):fmt(x*100,1))+'%'; const ratio=x=>Math.trunc(Math.max(0,x)*1e4+1e-8)/1e4;
 let divisor=1;
 function paramField([key,label,min,max]){return `<div class="field"><label for="p_${key}">${label}</label><div class="value-control" id="vc_${key}"><input id="p_${key}" type="number" value="${SNAP[key]}" min="${min}" max="${max}" step="any"><button type="button" data-reset="${key}">↻ Snapshot: ${fmt(SNAP[key],Number.isInteger(SNAP[key])?0:2)}</button></div></div>`;}
 const groups=[['Contributi obbligatori · lavoratore',['worker','extra','extraFrom']],['Contributi obbligatori · datore',['employerIvs','employerNaspi','employerInterprof','employerTfrFund','employerCuaf','employerMaternity','employerSickness','employerFis','inail']],['IRPEF: aliquote e scaglioni',['r1','r2','r3','b1','b2']],['Detrazioni e bonus fiscali',['workLow','workBase','workAdd','workExtra','wedgeAmount','tiAmount']],['TFR',['tfrDiv','tfrRecovery']],['Premi di risultato',['pdrRate','pdrLimit','pdrIncome']],['Buoni pasto',['mealElectronic','mealPaper']],['Previdenza complementare · parametri tecnici',['pensionCap','pensionSolidarity']]];
@@ -411,7 +414,7 @@ function renderPackage(p){const t=timeData(),o=packageOptions(p,t),r=calculate(n
 }
 function detailBlock(title,items,cls){return `<section class="flow-section ${cls}"><h3>${title}</h3><div class="tablewrap breakdown"><table class="flow-table"><thead><tr><th>Voce</th><th>€ annui</th></tr></thead><tbody>${items.map(([n,v,note,c])=>`<tr class="${c||''}"><td>${n}${note?'<small class="payhint" title="'+note+'"> ⓘ</small>':''}</td><td>${eur(v,2)}</td></tr>`).join('')}</tbody></table></div></section>`;}
 
-function validate(){let errs=[];document.querySelectorAll('input[type=number]').forEach(e=>{if(e.disabled||e.closest('[hidden]'))return;if(e.value===''||!Number.isFinite(Number(e.value))||!e.checkValidity())errs.push(e.labels&&e.labels[0]?e.labels[0].textContent:e.id);});const p=config();if(p.b1>=p.b2)errs.push('la seconda soglia IRPEF deve superare la prima');if(p.r1>p.r2||p.r2>p.r3)errs.push('le aliquote IRPEF devono essere non decrescenti');if(p.worker+p.extra+(p.usePension?p.pensionWorker:0)>=100)errs.push('i contributi personali complessivi devono essere inferiori al 100%');const t=timeData();if(t.hours<=0)errs.push('ferie e permessi devono lasciare ore lavorate positive');const o=packageOptions(p,t);if(p.tfrRecovery>=100/p.tfrDiv)errs.push('il recupero sul TFR deve essere inferiore alla quota di accantonamento');$('error').hidden=!errs.length;$('error').textContent=errs.length?'Correggi i dati: '+[...new Set(errs)].join('; ')+'.':'';$('results').classList.toggle('invalid',!!errs.length);return !errs.length;}
+function validate(){let errs=[];document.querySelectorAll('input[type=number]').forEach(e=>{if(e.disabled||e.closest('[hidden]'))return;if(e.value!==''&&(!Number.isFinite(Number(e.value))||!e.checkValidity()))errs.push(e.labels&&e.labels[0]?e.labels[0].textContent:e.id);});const p=config();if(p.b1>=p.b2)errs.push('la seconda soglia IRPEF deve superare la prima');if(p.r1>p.r2||p.r2>p.r3)errs.push('le aliquote IRPEF devono essere non decrescenti');if(p.worker+p.extra+(p.usePension?p.pensionWorker:0)>=100)errs.push('i contributi personali complessivi devono essere inferiori al 100%');const t=timeData();if(t.hours<=0)errs.push('ferie e permessi devono lasciare ore lavorate positive');const o=packageOptions(p,t);if(p.tfrRecovery>=100/p.tfrDiv)errs.push('il recupero sul TFR deve essere inferiore alla quota di accantonamento');$('error').hidden=!errs.length;$('error').textContent=errs.length?'Correggi i dati: '+[...new Set(errs)].join('; ')+'.':'';$('results').classList.toggle('invalid',!!errs.length);return !errs.length;}
 function render(){ $('smart').max=$('smartMode').value==='week'?5:261/12;$('mealTypeTrigger').innerHTML=($('mealType').value==='electronic'?'Elettronico':'Cartaceo')+' <span aria-hidden="true">▾</span>'; $('bonusExplanation').textContent='Bonus ordinario: segue contributi e IRPEF ordinaria. Premio di risultato qualificato: imposta sostitutiva '+fmt(num('p_pdrRate'))+'% sulla quota imponibile di un premio massimo lordo di '+eur(num('p_pdrLimit'))+'; reddito dipendente anno precedente fino a '+eur(num('p_pdrIncome'))+'. L’eccedenza lorda è ordinaria. Il limite di 20.000 € del cuneo fiscale non riguarda questa agevolazione.'; $('bonusType').value=on('pdrMode')?'pdr':'ordinary';$('childShare').disabled=num('spouse')===1;for(const k of Object.keys(SNAP))$('vc_'+k).classList.toggle('modified',num('p_'+k)!==SNAP[k]);const p=config();if(!validate())return;renderCurves(p);renderPackage(p);}
 function setRal(v){['ral','ralSlider','ralPackage'].forEach(id=>{const el=$(id);if(el&&el.value!==String(v))el.value=v;});}
 document.addEventListener('input',e=>{if(['ral','ralSlider','ralPackage'].includes(e.target.id))setRal(e.target.value);if(e.target.matches('input'))render();});document.addEventListener('change',e=>{if(e.target.id==='smartMode'){const x=num('smart');$('smart').value=Number((e.target.value==='month'?x*261/60:x*60/261).toFixed(2));}if(e.target.dataset.series){chartState[e.target.dataset.series]=e.target.checked;document.querySelectorAll('[data-series="'+e.target.dataset.series+'"]').forEach(el=>el.checked=e.target.checked);}if(e.target.matches('select,input[type=checkbox]'))render();});
@@ -552,7 +555,7 @@ function newPayCard(title,d,subtitle,items,months,r,p,t){
   +(ds.fundTax>0?row('− Imposta futura stimata sul fondo ('+fmt(f.fund)+'%)',-ds.fundTax,'Aliquota sulla parte dedotta e sul TFR conferito; spostata in ③','minus'):'')
   +(ds.tfrTax>0?row('− Imposta futura stimata sul TFR ('+fmt(f.tfr,1)+'%)',-ds.tfrTax,'Tassazione separata approssimata con aliquota unica; spostata in ③','minus'):'');
  const ivsE=ivsEmployer(r),ivs=r.contrib+ivsE,social=r.employer-ivsE+r.inail+r.solidarity,taxSoc=r.taxes-r.transfers+ds.fut+social;
- const s3=row('Parte lavoratore',r.contrib,'Trattenuta dalla RAL: '+fmt(p.worker,2)+'%'+(p.extra?' più '+fmt(p.extra,2)+'% aggiuntivo oltre '+eur(p.extraFrom)+' (contributo IVS che non aumenta l’aliquota di computo del 33%)':''),'',COMP.ivsW)
+ const s3=row('Parte lavoratore',r.contrib,'Trattenuta dalla RAL: '+fmt(p.worker,2)+'%'+(p.extra?' più '+fmt(p.extra,2)+'% aggiuntivo oltre '+eur(p.extraFrom)+' (contributo IVS aggiuntivo: l’effetto sul montante non è verificato)':''),'',COMP.ivsW)
   +row('Parte azienda',ivsE,'Oltre la RAL: '+fmt(p.employerIvs,2)+'% della base contributiva','',COMP.ivsE);
  const s4=row('Imposte (IRPEF, addizionali, premio)',r.taxes,'Imposte effettivamente dovute dopo le detrazioni','',COMP.tax)
   +(r.transfers>0?row('− Bonus fiscali in busta paga',-r.transfers,'Trattamento integrativo e somma non imponibile del cuneo: denaro versato al lavoratore, per questo le imposte sono «nette»','',COMP.tax):'')
@@ -561,11 +564,11 @@ function newPayCard(title,d,subtitle,items,months,r,p,t){
  const heroVal=usable+(valuePerim>=2?deferred:0)+(valuePerim>=3?ivs:0),fade=n=>n>valuePerim;
  const barParts=[['Netto utilizzabile',usable,COMP.net,'',fade(1)],['Previdenza · netto stimato',deferred,COMP.deferred,'',fade(2)]]
   .concat(openSecs.s3?[['IVS · lavoratore',r.contrib,COMP.ivsW,'',fade(3)],['IVS · azienda',ivsE,COMP.ivsE,'',fade(3)]]:[['Contributi pensionistici IVS',ivs,COMP.ivsBlock,'',fade(3)]])
-  .concat(openSecs.s4?[['Imposte nette',r.taxes-r.transfers,COMP.tax,'',true],['Imposte future su fondo e TFR',ds.fut,COMP.future,'',true],['Assicurazioni sociali',social,COMP.social,'',true]]:[['Imposte e assicurazioni sociali',taxSoc,COMP.taxBlock,'',true]]);
+  .concat(openSecs.s4&&r.taxes-r.transfers>=0?[['Imposte nette',r.taxes-r.transfers,COMP.tax,'',true],['Imposte future su fondo e TFR',ds.fut,COMP.future,'',true],['Assicurazioni sociali',social,COMP.social,'',true]]:[['Imposte e assicurazioni sociali',taxSoc,COMP.taxBlock,'',true]]);
  if(valuePerim===1)barParts.forEach(x=>x[4]=false);
  return '<article class="pay-view"><div class="payhead"><h3>'+title+'</h3>'+ctl+'</div>'
  +'<div class="pay-reference"><span title="RAL contrattuale: bonus lordo escluso. Il bonus è conteggiato nel netto e nel costo aziendale.">RAL contrattuale ⓘ</span><b>'+money(r.ral/d)+'</b></div>'
- +'<div class="pay-main-label">'+['','NETTO UTILIZZABILE · DENARO E BENEFIT','① + ② · NETTO E PREVIDENZA COMPLEMENTARE','① + ② + ③ · CON I CONTRIBUTI PENSIONISTICI IVS'][valuePerim]+'</div>'
+ +'<div class="pay-main-label">'+['','NETTO UTILIZZABILE · DENARO E BENEFIT','① + ② · NETTO E PREVIDENZA COMPLEMENTARE','① + ② + ③ · NETTO, PREVIDENZA E PENSIONE PUBBLICA'][valuePerim]+'</div>'
  +'<div class="hero-line"><strong class="hero-value">'+money(heroVal/d)+'</strong><span class="hero-share"><b>'+share(heroVal)+'</b>'+baseLabel+'</span></div><div class="unit-note">'+subtitle+' · benefit al nominale'+(valuePerim===3?' · ③ è pensione pubblica, non risparmio: il suo valore futuro non è stimato':'')+'</div>'
  +'<div class="pay-comp"><div class="comp-caption">Composizione del costo aziendale</div>'+compBar(barParts,cost)+'</div>'
  +'<div class="pay-rows">'
@@ -642,14 +645,14 @@ restoreState=function(){oldRestore();try{const raw=$('savedState');if(raw){const
 
 // Campi numerici: la rotellina non modifica i valori; frecce e pulsanti +/− avanzano di un passo proporzionale
 // al valore (una cifra in meno: 2.000 → ±100, 40.000 → ±1.000, 543 → ±10, 30 → ±1).
-function smartStep(el){const v=Math.abs(Number(el.value)||0),fixed=Number(el.getAttribute('step'))||0,floor=Number(el.dataset.minStep)||0;let st=v?Math.pow(10,Math.floor(Math.log10(v)+1e-9)-1):1;return Math.max(st,fixed,floor);}
+function smartStep(el){const v=Math.abs(Number(el.value)||0),fixed=Number(el.getAttribute('step'))||0,floor=Number(el.dataset.minStep)||(el.id.startsWith('p_')?0:1);let st=v?Math.pow(10,Math.floor(Math.log10(v)+1e-9)-1):1;return Math.max(st,fixed,floor);}
 function nudge(el,dir){const v=Number(el.value)||0,st=smartStep(el),dec=Math.max(0,-Math.floor(Math.log10(st)+1e-9));let n=Number((v+dir*st).toFixed(dec+2));
  const lo=el.min!==''?Number(el.min):-Infinity,hi=el.max!==''?Number(el.max):Infinity;n=Math.min(hi,Math.max(lo,n));el.value=String(Number(n.toFixed(dec+2)));
  el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
 document.addEventListener('wheel',e=>{const el=e.target;if(el.matches&&el.matches('input[type=number]')&&document.activeElement===el)el.blur();},{passive:true,capture:true});
 document.addEventListener('keydown',e=>{const el=e.target;if(!(el.matches&&el.matches('input[type=number]'))||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;e.preventDefault();nudge(el,e.key==='ArrowUp'?1:-1);},true);
 document.addEventListener('pointerdown',e=>{const el=e.target;if(!(el.matches&&el.matches('input[type=number]')))return;if(e.offsetX<el.clientWidth-22)return;e.preventDefault();el.focus();nudge(el,e.offsetY<el.clientHeight/2?1:-1);},true);
-$('smart').dataset.minStep='0.5';
+document.addEventListener('focusout',e=>{const el=e.target;if(el.matches&&el.matches('input[type=number]')&&el.value===''&&!el.validity.badInput){el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));}});
 restoreState();render();
 const topControl=$('backToTop');
 function updateTopControl(){topControl.hidden=window.scrollY<155;}
