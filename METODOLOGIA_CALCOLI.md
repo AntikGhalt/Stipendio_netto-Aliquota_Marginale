@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.1, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.2, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -618,6 +618,27 @@ Il fondo complementare e la pensione pubblica **non sono equivalenti**: i contri
 
 ---
 
+## 13-bis. Straordinari (v4.2)
+
+Nella pagina «Analisi stipendio» si possono inserire ore e compenso orario lordo di straordinario diurno, festivo e notturno (ore al mese × 12 oppure all'anno):
+
+~~~text
+S        = Σ_i ore_i × compenso_orario_i              (straordinari lordi annui)
+S_spec   = ore_festive × compenso_festivo + ore_notturne × compenso_notturno
+A        = R + S + B + V_imp                          (base contributiva)
+C_spec   = C_l(R + S + V_imp) − C_l(R + S − S_spec + V_imp)   (contributi imputabili a S_spec)
+S_sost   = min(limite, max(0, S_spec − C_spec))       [se l'opzione è attiva]
+Y        = A − C_l − B_agev_imponibile − S_sost + P_d − Versamenti_deducibili
+Imposta_sostitutiva_straordinari = S_sost × 15%
+N        = R + S + B − C_l − P_l − T + F
+K        = R + S + B + C_d + INAIL + Q + V + W + P_d + Solidarietà
+~~~
+
+- Gli straordinari pagano contributi e IRPEF come la RAL e **non** entrano nella base del TFR (scelta prudente: dipende dal CCNL). Il recupero 0,50% sul TFR, calcolato sull'imponibile previdenziale, li include.
+- **Imposta sostitutiva 2026:** la legge di bilancio 2026 (L. 199/2025, art. 1, commi 10-11) prevede il 15% al posto di IRPEF e addizionali sulle maggiorazioni per lavoro notturno, festivo e a turni; la circolare AdE 3/E del 24 giugno 2026 chiarisce che si applica all'intera retribuzione dello straordinario notturno o festivo. Il limite è 1.500 € di imponibile annuo. Requisiti (CCNL applicato, soglia di reddito dell'anno precedente) sono dichiarati dall'utente con una spunta, come per il premio di risultato. Aliquota e limite sono parametri modificabili. Non sono simulate le maggiorazioni per lavoro notturno o festivo svolto in orario ordinario, né le indennità di turno o reperibilità.
+- Nella scomposizione del netto, gli straordinari sono aggiunti dopo la RAL e prima del bonus (attribuzione sequenziale, §11.1).
+- Le ore di straordinario si sommano alle ore lavorate nella colonna oraria: con compenso nullo misurano la riduzione della paga effettiva per ora.
+
 ## 14. Buoni pasto, welfare e giorni lavorativi
 
 ### 14.1 Giorni e ore
@@ -987,11 +1008,14 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.1**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.2**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.2**
+- Straordinari diurni, festivi e notturni nel box dell'orario (tendina facoltativa), con imposta sostitutiva 15% 2026 su festivo e notturno, effetto su netto, costo e paga oraria. Rimossa la tendina «Ipotesi su bonus, welfare e buoni pasto».
 
 **v4.1**
 - Profilo fiscale come scheda fissa: territorio, coniuge, figli (con quota) e detrazioni automatiche (menu a comparsa) su un'unica riga.
