@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.8, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.9, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -741,7 +741,7 @@ Costo aziendale K                    = ① + ② + ③ + ④
 **Perché IVS separata (v3.6).** Nel sistema contributivo l'aliquota di computo del lavoro dipendente è il 33% (23,81% azienda + 9,19% lavoratore): l'intera quota IVS viene accreditata sul montante individuale, che determina la pensione. Invalidità e superstiti sono finanziate dalla stessa contribuzione e non hanno un'aliquota separata. Il legame fra versato e prestazione è quindi diretto, ma non è un risparmio: la gestione è a ripartizione e il valore dipende da rivalutazione (PIL nominale), coefficienti di trasformazione ed età di uscita, fissati per legge. Il simulatore non stima quel valore. Il contributo aggiuntivo dell'1% oltre la prima fascia (56.224 € nel 2026) è giuridicamente IVS ed è incluso in ③; non è stata trovata una fonte ufficiale che chiarisca se accresca il montante, e la nota informativa lo segnala come non verificato. Le altre aliquote datoriali (NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR), l'INAIL e la solidarietà sul fondo finanziano coperture e servizi senza accumulo individuale: sono in ④ con le imposte.
 
 
-La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). **Valore per te (v3.7).** Un selettore unico per le tre card sceglie il valore principale: ① (netto utilizzabile), ① + ② (con la previdenza complementare e il TFR, al netto stimato) oppure ① + ② + ③ (con i contributi pensionistici IVS). Sono ammesse solo somme progressive perché le sezioni sono ordinate dalla più disponibile alla meno certa; ④ è sempre esclusa. Nella barra di composizione le parti escluse sono sbiadite. ③ e ④ compaiono nella barra come blocchi di colore unico e mostrano le sfumature delle singole voci solo quando la sezione è aperta.
+La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). **Valore per te (v3.7).** Un selettore unico per le tre card sceglie il valore principale: ① (netto utilizzabile), ① + ② (con la previdenza complementare e il TFR, al netto stimato) oppure ① + ② + ③ (con i contributi pensionistici IVS). Sono ammesse solo somme progressive perché le sezioni sono ordinate dalla più disponibile alla meno certa; ④ è sempre esclusa. I colori seguono la scelta: con ① le tre sezioni hanno colori autonomi (verde, blu viola, blu); con ① + ② le due sezioni sommate diventano due tonalità di verde; con ① + ② + ③ tre tonalità di verde. ④ resta sempre arancione. ③ e ④ compaiono nella barra come blocchi di colore unico e mostrano le sfumature delle singole voci solo quando la sezione è aperta.
 
 Le sezioni ③ e ④ della v3.6 sostituiscono la precedente sezione unica «Imposte e contributi». Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
 
@@ -987,11 +987,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.8**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.9**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v3.9**
+- Colori di ①②③ guidati dal perimetro «Valore per te» al posto della trasparenza; ② blu viola e ③ blu anche nei box della pagina 01.
+- Rimossa la nota sulla pensione pubblica accanto al valore ①+②+③.
 
 **v3.8**
 - Campo svuotato = 0 (nessun errore; il valore 0 viene scritto quando si esce dal campo). Passo minimo 1 per frecce e pulsanti, tranne nei parametri fiscali.
