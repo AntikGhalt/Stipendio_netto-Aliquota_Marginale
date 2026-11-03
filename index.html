@@ -244,6 +244,8 @@
 .pay-sec-head.s1{background:color-mix(in srgb,var(--c1) 13%,#fff);color:color-mix(in srgb,var(--c1) 70%,#0b1d2e)}
 .pay-sec-head.s2{background:color-mix(in srgb,var(--c2) 15%,#fff);color:color-mix(in srgb,var(--c2) 38%,#0b1d2e)}
 .pay-sec-head.s3{background:color-mix(in srgb,var(--c3) 15%,#fff);color:color-mix(in srgb,var(--c3) 38%,#0b1d2e)}
+
+.pay-total-cost>b{font-size:19px;letter-spacing:-.3px}.pay-total-cost>b .dec{font-size:.65em}
 </style></head><body>
 <header class="top"><div class="tophead"><div><div class="brand">Atlante / Finanza personale</div><h1>Lo stipendio, voce per voce.</h1><p class="subtitle">Dalla RAL al netto, dal tempo lavorato al valore del tuo pacchetto.</p></div><div class="download-box"><div class="tag">ITALIA · SNAPSHOT 2026</div><button class="btn secondary download-button" id="downloadHtml" type="button">↓ Scarica HTML</button><p class="download-note">Salva una copia del simulatore con tutti i dati inseriti, da riaprire e modificare.</p></div></div></header><div class="sticky-nav"><nav class="tabs" aria-label="Sezioni del simulatore"><button class="tab active" data-page="curves" aria-pressed="true">01 · Crescita e tassazione</button><button class="tab" data-page="package" aria-pressed="false">02 · Stipendio e previdenza</button></nav><button class="top-link" id="backToTop" type="button" aria-label="Torna all’inizio" title="Torna all’inizio" hidden>↑</button></div>
 <main><details class="card profile"><summary>Profilo fiscale e contributivo <small id="profileLabel"></small></summary><div class="fields four">
@@ -299,7 +301,7 @@
 <li><a href="https://infoprecompilata.agenziaentrate.gov.it/portale/quadro-c-lavoro-dipendente" target="_blank" rel="noopener">Agenzia delle Entrate · Quadro C</a> — trattamento integrativo; <a href="https://www.fiscooggi.it/rubrica/normativa-e-prassi/articolo/legge-bilancio-2025-approvazione-definitiva-alle-camere" target="_blank" rel="noopener">FiscoOggi · Bilancio 2025</a> — cuneo fiscale.</li>
 <li><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=08" target="_blank" rel="noopener">MEF · Addizionale Lazio 2026</a> e <a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/risultato.htm?anno=2026&amp;cc=H501&amp;lista=1&amp;pagina=lazio.htm&amp;pr=RM&amp;r=1" target="_blank" rel="noopener">MEF · Roma 2026</a>.</li>
 <li><a href="https://www.ancebrescia.it/wp-content/uploads/2026/02/01_02_02-INPS-Circolare-minimale-circolare.pdf" target="_blank" rel="noopener">INPS · Circolare n. 6 del 30 gennaio 2026 (PDF)</a>, soglia contributo aggiuntivo. <a href="https://www.inps.it/it/it/inps-comunica/diritti-e-obblighi-in-materia-di-sicurezza-sociale-nell-unione-e/per-le-imprese/aliquote-contributive.html" target="_blank" rel="noopener">INPS · Aliquote contributive e variabilità dei profili</a>.</li></ul></details>
-<footer class="foot">Atlante Stipendio · v3.9 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
+<footer class="foot">Atlante Stipendio · v3.9.1 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
 <script>
 'use strict';
 const SNAP={pensionWorker:0.55,pensionEmployer:1.55,pensionCap:5300,pensionSolidarity:10,worker:9.19,employerIvs:23.81,employerNaspi:1.31,employerInterprof:0.30,employerTfrFund:0.20,employerCuaf:0.68,employerMaternity:0.24,employerSickness:2.44,employerFis:0.33,inail:0.4,extra:1,extraFrom:56224,tfrDiv:13.5,tfrRecovery:0.5,r1:23,r2:33,r3:43,b1:28000,b2:50000,workLow:1955,workBase:1910,workAdd:1190,workExtra:65,wedgeAmount:1000,tiAmount:1200,pdrRate:1,pdrLimit:5000,pdrIncome:80000,mealElectronic:10,mealPaper:4,reg:0,com:0,regEx:0,comEx:0};
@@ -430,9 +432,9 @@ $('resetFiscal').addEventListener('click',()=>{for(const k of Object.keys(SNAP))
 $('csv').addEventListener('click',()=>{if(!validate())return;const p=config(),u=divisor===1?'annui':'equivalenti /'+divisor;let text='RAL annua;Lordo '+u+';Netto '+u+';Contributi lavoratore;Imposte nette;Bonus fiscali;Contributi datore;TFR;Costo azienda;Prelievo su RAL %\r\n';for(let ral=0;ral<=100000;ral+=5000){const r=calculate(ral,p);text+=[fmt(ral,2).replaceAll('.',''),...[r.ral,r.net,r.contrib,r.taxes,r.transfers,r.employer+r.solidarity,r.tfr,r.cost].map(v=>(v/divisor).toFixed(2).replace('.',',')),ral?((r.contrib+r.taxes-r.transfers)/ral*100).toFixed(2).replace('.',','):''].join(';')+'\r\n';}const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='ral_netto_2026.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 let draggingChart=null,draggingMode='ral';
-function chartValue(e,chart){const svg=chart.querySelector('svg');if(!svg||!svg.getScreenCTM())return null;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const pos=pt.matrixTransform(svg.getScreenCTM().inverse());return {x:pos.x,y:pos.y,ral:Math.max(0,Math.min(100000,Math.round((pos.x-67)/(860-67-22)*100000/100)*100))};}
+function chartValue(e,chart){const svg=chart.querySelector('svg');if(!svg||!svg.getScreenCTM())return null;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const pos=pt.matrixTransform(svg.getScreenCTM().inverse());return {x:pos.x,y:pos.y,ral:Math.max(0,Math.min(100000,Math.round((pos.x-67)/(860-67-22)*100000/1000)*1000))};}
 function selectChartRal(e,chart){const point=chartValue(e,chart);if(!point)return;
- if(draggingMode==='raise'){$('raiseAmount').value=Math.max(0,Math.min(20000,Math.round((point.ral-num('ral'))/100)*100));}
+ if(draggingMode==='raise'){$('raiseAmount').value=Math.max(0,Math.min(20000,Math.round((point.ral-num('ral'))/1000)*1000));}
  else setRal(point.ral);
  render();}
 document.addEventListener('pointerdown',e=>{const chart=e.target.closest('#mainChart,#marginalChart');if(!chart)return;
@@ -469,7 +471,7 @@ const rateSeries=[
  {key:'netRal',group:'kept',label:'Netto su 1.000 € di RAL in più',color:COMP.net,width:2.4},
  {key:'netCost',group:'kept',label:'Netto su 1.000 € di costo aziendale in più',color:COMP.net,width:2.4,dash:'8 4'}
 ];
-const rateVisibility={actualTax:true,taxRate:false,workerRate:false,fundRate:true,employerRate:false,wedge:false,netRal:false,netCost:true};
+const rateVisibility={actualTax:true,taxRate:false,workerRate:false,fundRate:true,employerRate:false,wedge:false,netRal:true,netCost:false};
 // Due prospettive sullo stesso aumento: «quanto resta» (predefinita) e «cuneo» (lavoratore + azienda).
 let ratePerspective='kept';const perspectiveGroups={kept:['kept'],wedge:['worker','employer']};
 function rateValues(a,b){const d=deltaParts(a,b),k=Math.abs(d.dK)>1e-9?1000/d.dK:0,u=d.dR?1000/d.dR:0;

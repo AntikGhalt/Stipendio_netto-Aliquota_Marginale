@@ -829,7 +829,7 @@ Aliquota_1000_percento
     = 100 × (1.000 − ΔN − ΔP_l) / 1.000
 ~~~
 
-Curve del grafico, raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €). Dalla v3.4 un interruttore sceglie la **prospettiva**: «Quanto resta in tasca» (predefinita, solo gruppo «Quanto resta», attiva solo Netto/Δcosto) oppure «Cuneo» (gruppi lavoratore e azienda; attive di base solo il prelievo marginale e la quota personale al fondo, le altre si accendono dalla legenda).
+Curve del grafico, raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €). Dalla v3.4 un interruttore sceglie la **prospettiva**: «Quanto resta in tasca» (predefinita, solo gruppo «Quanto resta», attiva solo Netto su 1.000 € di RAL) oppure «Cuneo» (gruppi lavoratore e azienda; attive di base solo il prelievo marginale e la quota personale al fondo, le altre si accendono dalla legenda).
 
 **Unità dell'asse (v3.5).** Le curve sono espresse in **euro su ogni 1.000 € in più** (di RAL o di costo aziendale, secondo la curva): il valore in euro è la frazione × 1.000, quindi 619 € equivale a un'aliquota del 61,9%. I riepiloghi laterali e i box restano anche in percentuale.
 
@@ -845,8 +845,8 @@ Azienda · fuori dalla RAL
   Cuneo marginale sul costo   = Δ(T − F + G + C_l + C_d + INAIL + Sol.) / ΔK
 
 Quanto resta
-  Netto / ΔRAL                = ΔN / ΔR                       [opzionale]
-  Netto / Δcosto aziendale    = ΔN / ΔK                       [predefinita nella prospettiva «resta»]
+  Netto / ΔRAL                = ΔN / ΔR                       [predefinita nella prospettiva «resta»]
+  Netto / Δcosto aziendale    = ΔN / ΔK                       [opzionale]
 ~~~
 
 Per costruzione: Prelievo marginale = imposte nette + contributi lavoratore, e Netto/ΔRAL = 1 − Prelievo marginale − ΔP_l/ΔR.
@@ -857,7 +857,7 @@ Il **cuneo marginale** qui definito ha al denominatore l'intero ΔK, che include
 
 **Lo scalino intorno a 9.000–10.000 € di RAL è reale, non un artefatto di calcolo.** Il trattamento integrativo (1.200 €) spetta nel primo tratto solo se I > D_l − 75 (§9.3), cioè da circa 8.200 € di imponibile: superata la soglia, il netto aumenta di colpo di 1.200 €, quindi su +1.000 € di RAL ΔN > ΔR (prelievo marginale negativo, netto/ΔRAL > 100%, e anche ΔN > ΔK). Subito prima, la somma cuneo passa dal 7,1% al 5,3% di tutto Y a 8.500 € (§9.1), con uno scalino opposto. Il passo di 1.000 € spalma su un intervallo ciò che nella norma avviene in un euro. È rilevante solo per redditi annui molto bassi (part-time, anno incompleto). Le tacche sono arrotondate a passi 1/2/2,5/5 × 10ⁿ.
 
-**Maniglie.** La RAL di partenza si sposta cliccando o trascinando nel grafico; l'aumento si trascina dal punto verde posto **sopra** l'area del grafico, così le due maniglie restano separabili anche quando si sovrappongono in orizzontale.
+**Maniglie.** Trascinando, RAL e aumento avanzano a passi di 1.000 € (nei campi si può comunque scrivere qualsiasi importo). La RAL di partenza si sposta cliccando o trascinando nel grafico; l'aumento si trascina dal punto verde posto **sopra** l'area del grafico, così le due maniglie restano separabili anche quando si sovrappongono in orizzontale.
 
 **Due netti, un solo motore.** La pagina 01 mostra il **netto dalla sola RAL** (N senza bonus, buoni e welfare), che coincide con la prima riga di ① nella pagina 02. Il passaggio è: netto utilizzabile della pagina 02 = netto dalla sola RAL + bonus netto + welfare + buoni pasto netti. Le curve marginali restano sulla sola RAL, perché bonus e benefit hanno regimi propri e confonderebbero la lettura dell'aliquota.
 
