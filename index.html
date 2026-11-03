@@ -231,6 +231,10 @@
 /* v3.6: ③ IVS in blu, ④ imposte e assicurazioni sociali in arancione */
 .pay-sec.s3{border-left-color:#2f5f8f}.pay-sec.s4{border-left-color:#d97a26}
 .pay-sec-head.s3{background:#e9f0f8;color:#24496f}.pay-sec-head.s4{background:#fdf1e6;color:#8a4a15}
+
+/* v3.7 */
+.comp-bar span.faded{opacity:.28}
+.paytitle-controls{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
 </style></head><body>
 <header class="top"><div class="tophead"><div><div class="brand">Atlante / Finanza personale</div><h1>Lo stipendio, voce per voce.</h1><p class="subtitle">Dalla RAL al netto, dal tempo lavorato al valore del tuo pacchetto.</p></div><div class="download-box"><div class="tag">ITALIA · SNAPSHOT 2026</div><button class="btn secondary download-button" id="downloadHtml" type="button">↓ Scarica HTML</button><p class="download-note">Salva una copia del simulatore con tutti i dati inseriti, da riaprire e modificare.</p></div></div></header><div class="sticky-nav"><nav class="tabs" aria-label="Sezioni del simulatore"><button class="tab active" data-page="curves" aria-pressed="true">01 · Crescita e tassazione</button><button class="tab" data-page="package" aria-pressed="false">02 · Stipendio e previdenza</button></nav><button class="top-link" id="backToTop" type="button" aria-label="Torna all’inizio" title="Torna all’inizio" hidden>↑</button></div>
 <main><details class="card profile"><summary>Profilo fiscale e contributivo <small id="profileLabel"></small></summary><div class="fields four">
@@ -270,9 +274,9 @@
 <div class="card"><div class="section-label">Orario contrattuale e calcolo delle ore lavorate</div><div class="fields four">
 <div class="field"><label for="weekly">Ore contrattuali settimanali</label><input id="weekly" max="60" min="1" step="any" type="number" value="40"/></div>
 <div class="field"><label for="leave">Ferie + ex festività (giorni di assenza)</label><input id="leave" max="100" min="0" step="any" type="number" value="27"/></div>
-<div class="field"><label for="permits">Altri permessi utilizzati (ore, escluse ex festività)</label><input id="permits" max="1000" min="0" step="any" type="number" value="32"/></div>
+<div class="field"><label for="permits">Altri permessi utilizzati (ore, escluse ex festività)</label><input id="permits" max="1000" min="0" step="any" type="number" value="38"/></div>
 <div class="field"><label for="localHoliday">Festività e patrono (giorni lavorativi)</label><input id="localHoliday" max="30" min="0" step="any" type="number" value="9.8"/></div></div><p class="note">Settimana su 5 giorni, lunedì–venerdì. Ferie e permessi si intendono fruiti nell’anno; i 27 giorni iniziali comprendono ferie ed ex festività. Festività e patrono: 9,8 giorni come media convenzionale pluriennale scelta, modificabile; non sommiamo altre festività di calendario. Non includere nuovamente le ex festività nelle ore di permesso. Se il contratto conta le ferie su 6 giorni, convertile in giorni di assenza effettiva su 5.</p><div class="calculation" id="timeFormula" style="margin-top:13px"></div></div>
-<div class="row paytitle"><div><h2>Retribuzione e valore economico · tre unità di lettura</h2><p class="note">Tutte le voci sono confrontabili su base annua, mensile o per ora lavorata. Nessun importo mensile simula il singolo cedolino.</p></div><div class="month-choice pct-choice"><span>Percentuali su</span><div class="month-switch" role="group" aria-label="Base delle percentuali"><button type="button" data-pct-base="cost">costo aziendale</button><button type="button" data-pct-base="ral">RAL</button></div></div></div>
+<div class="row paytitle"><div><h2>Retribuzione e valore economico · tre unità di lettura</h2><p class="note">Tutte le voci sono confrontabili su base annua, mensile o per ora lavorata. Nessun importo mensile simula il singolo cedolino.</p></div><div class="paytitle-controls"><div class="month-choice pct-choice"><span>Valore per te</span><div class="month-switch" role="group" aria-label="Somma delle sezioni"><button type="button" data-perim="1">①</button><button type="button" data-perim="2">① + ②</button><button type="button" data-perim="3">① + ② + ③</button></div></div><div class="month-choice pct-choice"><span>Percentuali su</span><div class="month-switch" role="group" aria-label="Base delle percentuali"><button type="button" data-pct-base="cost">costo aziendale</button><button type="button" data-pct-base="ral">RAL</button></div></div></div></div>
 <div class="pay-views" id="payCards"></div>
 <div class="future-tax card"><div><div class="section-label">Ipotesi sulla tassazione futura · netto della sezione ② e imposte future in ③</div><p class="note">Non è un riscatto immediato. Prestazioni pensionistiche: dal 15% al 9% in funzione dell’anzianità di partecipazione; anticipazioni e riscatti possono arrivare al 23%. Il TFR fuori fondo ha tassazione separata, qui approssimata con un’aliquota unica.</p></div><div class="future-tax-inputs"><div class="field"><label for="pensionExitRate">Fondo pensione</label><select id="pensionExitRate"><option value="15">15% · riferimento iniziale</option><option value="12">12% · scenario intermedio</option><option value="9">9% · anzianità elevata</option><option value="23">23% · alcune anticipazioni/riscatti</option></select></div><div class="field"><label for="tfrOrdRate">TFR fuori fondo (%)</label><input id="tfrOrdRate" type="number" value="23" min="0" max="50" step="0.5"></div></div></div>
 <div class="package-details"><details class="card result-accordion"><summary>Costo aziendale per voce di spesa · contributi datore scomposti</summary><p class="note">Stesso totale delle sezioni ①+②+③, letto dal lato dell’azienda. Le percentuali sono quote del costo; quelle dei contributi datore sono aliquote sulla base contributiva.</p><div id="packageCost"></div></details>
@@ -286,7 +290,7 @@
 <li><a href="https://infoprecompilata.agenziaentrate.gov.it/portale/quadro-c-lavoro-dipendente" target="_blank" rel="noopener">Agenzia delle Entrate · Quadro C</a> — trattamento integrativo; <a href="https://www.fiscooggi.it/rubrica/normativa-e-prassi/articolo/legge-bilancio-2025-approvazione-definitiva-alle-camere" target="_blank" rel="noopener">FiscoOggi · Bilancio 2025</a> — cuneo fiscale.</li>
 <li><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=08" target="_blank" rel="noopener">MEF · Addizionale Lazio 2026</a> e <a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/risultato.htm?anno=2026&amp;cc=H501&amp;lista=1&amp;pagina=lazio.htm&amp;pr=RM&amp;r=1" target="_blank" rel="noopener">MEF · Roma 2026</a>.</li>
 <li><a href="https://www.ancebrescia.it/wp-content/uploads/2026/02/01_02_02-INPS-Circolare-minimale-circolare.pdf" target="_blank" rel="noopener">INPS · Circolare n. 6 del 30 gennaio 2026 (PDF)</a>, soglia contributo aggiuntivo. <a href="https://www.inps.it/it/it/inps-comunica/diritti-e-obblighi-in-materia-di-sicurezza-sociale-nell-unione-e/per-le-imprese/aliquote-contributive.html" target="_blank" rel="noopener">INPS · Aliquote contributive e variabilità dei profili</a>.</li></ul></details>
-<footer class="foot">Atlante Stipendio · v3.6 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
+<footer class="foot">Atlante Stipendio · v3.7 · Anno fiscale 2026 · Verifica normativa 14/10/2026 (profili contributivi scomposti e personalizzabili).<br>Simulazione orientativa annuale; le ipotesi visibili fanno parte del risultato. Dati elaborati nel browser, senza invio a servizi esterni. Scarica l’HTML per conservare tutti i dati e le opzioni inseriti, anche offline.<div class="author-signature">Realizzato da <a href="https://www.linkedin.com/in/paolo-refuto-6a5b52236/" target="_blank" rel="noopener noreferrer">Paolo Refuto ↗</a></div></footer></main>
 <script>
 'use strict';
 const SNAP={pensionWorker:0.55,pensionEmployer:1.55,pensionCap:5300,pensionSolidarity:10,worker:9.19,employerIvs:23.81,employerNaspi:1.31,employerInterprof:0.30,employerTfrFund:0.20,employerCuaf:0.68,employerMaternity:0.24,employerSickness:2.44,employerFis:0.33,inail:0.4,extra:1,extraFrom:56224,tfrDiv:13.5,tfrRecovery:0.5,r1:23,r2:33,r3:43,b1:28000,b2:50000,workLow:1955,workBase:1910,workAdd:1190,workExtra:65,wedgeAmount:1000,tiAmount:1200,pdrRate:1,pdrLimit:5000,pdrIncome:80000,mealElectronic:10,mealPaper:4,reg:0,com:0,regEx:0,comEx:0};
@@ -364,7 +368,7 @@ function costMarkup(r,d=1){const parts=[['Retribuzione lorda (RAL + bonus)',r.ra
  +line('<b>Costo all’azienda</b>',eur(r.cost/d))+line('Contributi totali (datore + lavoratore + solidarietà)',eur((r.contrib+r.employer+r.solidarity)/d),'Voce informativa: i contributi lavoratore sono già dentro la RAL');}
 // v3.3 · scomposizione unica, usata in entrambe le dashboard.
 // Identità nel perimetro del modello: costo = netto + benefit + (fondo + TFR) + imposte nette + contributi e assicurazioni.
-const COMP={net:'#21836a',deferred:'#8fcfb2',ivsW:'#2f5f8f',ivsE:'#6f9fd0',tax:'#d97a26',future:'#f0b878',social:'#a8551f',worker:'#2f5f8f',employer:'#8a6fb0'};
+const COMP={net:'#21836a',deferred:'#8fcfb2',ivsW:'#2f5f8f',ivsE:'#6f9fd0',ivsBlock:'#4a80b8',taxBlock:'#d97a26',tax:'#d97a26',future:'#f0b878',social:'#a8551f',worker:'#2f5f8f',employer:'#8a6fb0'};
 // Quota IVS a carico dell'azienda: prima voce della scomposizione dei contributi datoriali.
 function ivsEmployer(r){return r.employerItems?r.employerItems[0][1]:0;}
 // Aliquote illustrative di uscita: lette direttamente dal DOM (pagina 02), così ogni render usa il valore appena scelto.
@@ -379,7 +383,7 @@ function deltaParts(a,b){
 }
 function compParts(d){return [['Netto in denaro',d.dN+d.dB,COMP.net,'Dopo imposte, contributi e quota personale al fondo'],['Previdenza differita · fondo e TFR, netto stimato',d.dDef,COMP.deferred,'Quota personale e aziendale al fondo + TFR maturato, al netto delle imposte future stimate (aliquote nella pagina 02)'],['Contributi IVS · lavoratore',d.dCl,COMP.ivsW,'Contributi pensionistici trattenuti dalla RAL, compreso l’eventuale 1% aggiuntivo'],['Contributi IVS · azienda',d.dIvsE,COMP.ivsE,'Contributi pensionistici del datore, oltre la RAL'],['Imposte nette',d.dTax,COMP.tax,'IRPEF e addizionali al netto di detrazioni e bonus fiscali in busta paga'],['Imposte future stimate su fondo e TFR',d.dFut,COMP.future,'Stima con le aliquote illustrative della pagina 02'],['Assicurazioni sociali e altri contributi azienda',d.dSoc,COMP.social,'NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR, INAIL e solidarietà sul fondo']];}
 function compBar(parts,total){const pos=parts.map(x=>Math.max(0,x[1])),sum=pos.reduce((a,b)=>a+b,0);
- return '<div class="comp-bar" role="img" aria-label="'+parts.map(x=>x[0]+' '+(total?pct(x[1]/total):'—')).join(', ')+'">'+(sum>0?parts.map((x,i)=>pos[i]>0?'<span style="flex-grow:'+(pos[i]/sum).toFixed(5)+';background:'+x[2]+'" title="'+x[0]+': '+eur(x[1])+' · '+(total?pct(x[1]/total):'—')+'"></span>':'').join(''):'')+'</div>'+(parts.some(x=>x[1]<-0.5)?'<p class="note comp-neg">Una componente è negativa (es. trattamento integrativo o bonus fiscali che crescono): la barra mostra solo le parti positive.</p>':'');}
+ return '<div class="comp-bar" role="img" aria-label="'+parts.map(x=>x[0]+' '+(total?pct(x[1]/total):'—')).join(', ')+'">'+(sum>0?parts.map((x,i)=>pos[i]>0?'<span class="'+(x[4]?'faded':'')+'" style="flex-grow:'+(pos[i]/sum).toFixed(5)+';background:'+x[2]+'" title="'+x[0]+': '+eur(x[1])+' · '+(total?pct(x[1]/total):'—')+'"></span>':'').join(''):'')+'</div>'+(parts.some(x=>x[1]<-0.5)?'<p class="note comp-neg">Una componente è negativa (es. trattamento integrativo o bonus fiscali che crescono): la barra mostra solo le parti positive.</p>':'');}
 function increaseMarkup(r,more,amount){
  const d=deltaParts(r,more),pr=x=>amount?pct(x/amount):'—',pk=x=>Math.abs(d.dK)>1e-9?pct(x/d.dK):'—',parts=compParts(d);
  const ratio=a=>a.ral?pct(a.net/a.ral):'—',ratioK=a=>a.cost?pct(a.net/a.cost):'—';
@@ -525,7 +529,9 @@ function payComponents(p,o,r){
 }
 // Sezioni ①②③ chiuse di base; aprirne una la apre nelle tre colonne e lo stato sopravvive ai ricalcoli.
 const openSecs={s1:false,s2:false,s3:false,s4:false};let pctBase='cost';
-document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details.pay-sec'))return;const k=d.dataset.sec;if(openSecs[k]===d.open)return;openSecs[k]=d.open;document.querySelectorAll('details.pay-sec[data-sec="'+k+'"]').forEach(x=>{if(x.open!==d.open)x.open=d.open;});},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details.pay-sec'))return;const k=d.dataset.sec;if(openSecs[k]===d.open)return;openSecs[k]=d.open;redrawNewPackage(config());},true);
+// Perimetro del «valore per te»: somme progressive ①, ①+②, ①+②+③ (dalla voce più disponibile alla meno certa).
+let valuePerim=1;
 // Importo con decimali ridotti graficamente: «29.171» grande, «,84 €» piccolo.
 function moneySmall(v){return eur(v,2).replace(/,(\d{2})/,'<span class="dec">,$1</span>');}
 function newPayCard(title,d,subtitle,items,months,r,p,t){
@@ -552,11 +558,16 @@ function newPayCard(title,d,subtitle,items,months,r,p,t){
   +(r.transfers>0?row('− Bonus fiscali in busta paga',-r.transfers,'Trattamento integrativo e somma non imponibile del cuneo: denaro versato al lavoratore, per questo le imposte sono «nette»','',COMP.tax):'')
   +(ds.fut>0?row('Imposte future stimate su fondo e TFR',ds.fut,'Dalla sezione ②, con le aliquote illustrative scelte sotto','',COMP.future):'')
   +row('Assicurazioni sociali e altri contributi azienda',social,'NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali e Fondo garanzia TFR '+eur((r.employer-ivsE)/d,2)+', INAIL '+eur(r.inail/d,2)+', solidarietà 10% sulla quota azienda al fondo '+eur(r.solidarity/d,2),'',COMP.social);
+ const heroVal=usable+(valuePerim>=2?deferred:0)+(valuePerim>=3?ivs:0),fade=n=>n>valuePerim;
+ const barParts=[['Netto utilizzabile',usable,COMP.net,'',fade(1)],['Previdenza · netto stimato',deferred,COMP.deferred,'',fade(2)]]
+  .concat(openSecs.s3?[['IVS · lavoratore',r.contrib,COMP.ivsW,'',fade(3)],['IVS · azienda',ivsE,COMP.ivsE,'',fade(3)]]:[['Contributi pensionistici IVS',ivs,COMP.ivsBlock,'',fade(3)]])
+  .concat(openSecs.s4?[['Imposte nette',r.taxes-r.transfers,COMP.tax,'',true],['Imposte future su fondo e TFR',ds.fut,COMP.future,'',true],['Assicurazioni sociali',social,COMP.social,'',true]]:[['Imposte e assicurazioni sociali',taxSoc,COMP.taxBlock,'',true]]);
+ if(valuePerim===1)barParts.forEach(x=>x[4]=false);
  return '<article class="pay-view"><div class="payhead"><h3>'+title+'</h3>'+ctl+'</div>'
  +'<div class="pay-reference"><span title="RAL contrattuale: bonus lordo escluso. Il bonus è conteggiato nel netto e nel costo aziendale.">RAL contrattuale ⓘ</span><b>'+money(r.ral/d)+'</b></div>'
- +'<div class="pay-main-label">NETTO UTILIZZABILE · DENARO E BENEFIT</div>'
- +'<div class="hero-line"><strong class="hero-value">'+money(usable/d)+'</strong><span class="hero-share"><b>'+share(usable)+'</b>'+baseLabel+'</span></div><div class="unit-note">'+subtitle+' · benefit al nominale</div>'
- +'<div class="pay-comp"><div class="comp-caption">Composizione del costo aziendale</div>'+compBar(compParts(L),cost)+'</div>'
+ +'<div class="pay-main-label">'+['','NETTO UTILIZZABILE · DENARO E BENEFIT','① + ② · NETTO E PREVIDENZA COMPLEMENTARE','① + ② + ③ · CON I CONTRIBUTI PENSIONISTICI IVS'][valuePerim]+'</div>'
+ +'<div class="hero-line"><strong class="hero-value">'+money(heroVal/d)+'</strong><span class="hero-share"><b>'+share(heroVal)+'</b>'+baseLabel+'</span></div><div class="unit-note">'+subtitle+' · benefit al nominale'+(valuePerim===3?' · ③ è pensione pubblica, non risparmio: il suo valore futuro non è stimato':'')+'</div>'
+ +'<div class="pay-comp"><div class="comp-caption">Composizione del costo aziendale</div>'+compBar(barParts,cost)+'</div>'
  +'<div class="pay-rows">'
  +sec('s1','①','Netto utilizzabile',usable,s1)
  +sec('s2','②','Previdenza · netto stimato',deferred,s2)
@@ -566,6 +577,7 @@ function newPayCard(title,d,subtitle,items,months,r,p,t){
  +'</div></article>';
 }
 function redrawNewPackage(p){
+ document.querySelectorAll('[data-perim]').forEach(b=>{const a=Number(b.dataset.perim)===valuePerim;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  document.querySelectorAll('[data-pct-base]').forEach(b=>{const a=b.dataset.pctBase===pctBase;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  const t=timeData(),o=packageOptions(p,t),r=calculate(num('ral'),p,o),items=payComponents(p,o,r);
  $('payCards').innerHTML=newPayCard('Annuale',1,'Importi annui',items,false,r,p,t)+newPayCard('Mensile',chosenMonths,'Media su '+chosenMonths+' mensilità · non un cedolino',items,true,r,p,t)+newPayCard('Orario',Math.max(1,t.hours),'Per ora lavorata · '+fmt(t.hours,1)+' ore annue',items,false,r,p,t);
@@ -602,6 +614,7 @@ render=function(){
 };
 // Dedicated control handlers for the new presentation.
 document.addEventListener('click',e=>{
+ const pm=e.target.closest('[data-perim]');if(pm){valuePerim=Number(pm.dataset.perim);render();}
  const pb=e.target.closest('[data-pct-base]');if(pb){pctBase=pb.dataset.pctBase;render();}
  const persp=e.target.closest('[data-perspective]');if(persp){ratePerspective=persp.dataset.perspective;render();}
  const go=e.target.closest('[data-goto]');if(go){document.querySelector('.tab[data-page="'+go.dataset.goto+'"]').click();}
@@ -623,10 +636,20 @@ document.addEventListener('change',e=>{
 },true);
 // Do not let dragging the hidden graph affect the RAL: the visible graph remains interactive.
 const oldCapture=captureState;
-captureState=function(){return {...oldCapture(),activeChart,chosenMonths,rateVisibility:{...rateVisibility},ratePerspective,pctBase};};
+captureState=function(){return {...oldCapture(),activeChart,chosenMonths,rateVisibility:{...rateVisibility},ratePerspective,pctBase,valuePerim,openSecs:{...openSecs}};};
 const oldRestore=restoreState;
-restoreState=function(){oldRestore();try{const raw=$('savedState');if(raw){const a=JSON.parse(raw.textContent);activeChart=a.activeChart||'marginal';chosenMonths=a.chosenMonths||12;Object.assign(rateVisibility,a.rateVisibility||{});ratePerspective=a.ratePerspective||'kept';pctBase=a.pctBase||'cost';if(a.pensionRate!=null&&!(a.values||{}).pensionExitRate)$('pensionExitRate').value=String(a.pensionRate);if(a.tfrRate!=null&&!(a.values||{}).tfrOrdRate)$('tfrOrdRate').value=String(a.tfrRate);}}catch(e){}document.querySelectorAll('[data-rate-series]').forEach(b=>b.checked=!!rateVisibility[b.dataset.rateSeries]);if($('ralPackage').value!==$('ral').value)$('ralPackage').value=$('ral').value;};
+restoreState=function(){oldRestore();try{const raw=$('savedState');if(raw){const a=JSON.parse(raw.textContent);activeChart=a.activeChart||'marginal';chosenMonths=a.chosenMonths||12;Object.assign(rateVisibility,a.rateVisibility||{});ratePerspective=a.ratePerspective||'kept';pctBase=a.pctBase||'cost';valuePerim=a.valuePerim||1;Object.assign(openSecs,a.openSecs||{});if(a.pensionRate!=null&&!(a.values||{}).pensionExitRate)$('pensionExitRate').value=String(a.pensionRate);if(a.tfrRate!=null&&!(a.values||{}).tfrOrdRate)$('tfrOrdRate').value=String(a.tfrRate);}}catch(e){}document.querySelectorAll('[data-rate-series]').forEach(b=>b.checked=!!rateVisibility[b.dataset.rateSeries]);if($('ralPackage').value!==$('ral').value)$('ralPackage').value=$('ral').value;};
 
+// Campi numerici: la rotellina non modifica i valori; frecce e pulsanti +/− avanzano di un passo proporzionale
+// al valore (una cifra in meno: 2.000 → ±100, 40.000 → ±1.000, 543 → ±10, 30 → ±1).
+function smartStep(el){const v=Math.abs(Number(el.value)||0),fixed=Number(el.getAttribute('step'))||0,floor=Number(el.dataset.minStep)||0;let st=v?Math.pow(10,Math.floor(Math.log10(v)+1e-9)-1):1;return Math.max(st,fixed,floor);}
+function nudge(el,dir){const v=Number(el.value)||0,st=smartStep(el),dec=Math.max(0,-Math.floor(Math.log10(st)+1e-9));let n=Number((v+dir*st).toFixed(dec+2));
+ const lo=el.min!==''?Number(el.min):-Infinity,hi=el.max!==''?Number(el.max):Infinity;n=Math.min(hi,Math.max(lo,n));el.value=String(Number(n.toFixed(dec+2)));
+ el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+document.addEventListener('wheel',e=>{const el=e.target;if(el.matches&&el.matches('input[type=number]')&&document.activeElement===el)el.blur();},{passive:true,capture:true});
+document.addEventListener('keydown',e=>{const el=e.target;if(!(el.matches&&el.matches('input[type=number]'))||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;e.preventDefault();nudge(el,e.key==='ArrowUp'?1:-1);},true);
+document.addEventListener('pointerdown',e=>{const el=e.target;if(!(el.matches&&el.matches('input[type=number]')))return;if(e.offsetX<el.clientWidth-22)return;e.preventDefault();el.focus();nudge(el,e.offsetY<el.clientHeight/2?1:-1);},true);
+$('smart').dataset.minStep='0.5';
 restoreState();render();
 const topControl=$('backToTop');
 function updateTopControl(){topControl.hidden=window.scrollY<155;}
