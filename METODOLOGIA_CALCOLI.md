@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.2, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.3, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -1008,11 +1008,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.2**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.3**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.3**
+- RAL in evidenza nella pagina «Analisi stipendio».
+- Box dell'orario: cinque campi su una riga (con «Giorni di smart senza buono» spostato qui) e «Stime ore e buoni» sempre visibili sotto i campi; ipotesi sul calendario in tendina.
 
 **v4.2**
 - Straordinari diurni, festivi e notturni nel box dell'orario (tendina facoltativa), con imposta sostitutiva 15% 2026 su festivo e notturno, effetto su netto, costo e paga oraria. Rimossa la tendina «Ipotesi su bonus, welfare e buoni pasto».
