@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v3.3, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v3.9, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -555,7 +555,7 @@ Q = max(0, Base_TFR / 13,5 − A × 0,50%)
 
 Il recupero dello 0,50% è una correzione della **quota TFR stimata**, non una nuova trattenuta applicata al netto monetario. Welfare e valore esente dei buoni non sono sommati alla base TFR.
 
-**Limite specifico dell'implementazione:** il termine di recupero usa A (RAL + bonus + buoni imponibili) anche quando il bonus è escluso dalla base TFR. È una convenzione semplificativa del codice e può produrre una stima differente da quella contrattualmente corretta. Non vengono simulate rivalutazioni del TFR maturato in anni precedenti.
+**Base del recupero (verificata in v3.8):** lo 0,50% è calcolato sulla retribuzione imponibile ai fini previdenziali dell'anno, cioè su A (RAL + bonus + buoni imponibili), anche quando il bonus non entra nella base del TFR. È la regola di legge (art. 3 L. 297/1982), non una semplificazione. Il contributo è già compreso nell'IVS a carico dell'azienda e viene recuperato sulla quota TFR: nel costo aziendale compare una sola volta. Non vengono simulate rivalutazioni del TFR maturato in anni precedenti.
 
 ### 12.2 Destinazione
 
@@ -601,6 +601,8 @@ Netto_fondo_illustrativo
 
 L'aliquota è selezionabile fra **15%, 12%, 9% e 23%**. Il 15% è il valore iniziale, non il 9%. L'aliquota del 9% è un possibile esito per determinate prestazioni pensionistiche con elevata anzianità; il 23% può essere rilevante per alcune anticipazioni o riscatti. **Non esiste un'aliquota unica applicabile a tutti i prelievi.**
 
+**Bug corretto in v3.4:** fino alla v3.3 il cambio dell'aliquota del fondo (e di quella del TFR) veniva annullato da un ricalcolo che rimetteva il valore precedente. Ora le aliquote sono lette direttamente dai campi a ogni calcolo (funzione `futureRates`).
+
 Se il TFR rimane fuori dal fondo, il simulatore mostra separatamente:
 
 ~~~text
@@ -634,7 +636,7 @@ Ore_effettivamente_lavorate
 Ore_contrattuali_anno = Ore_settimanali × 52
 ~~~
 
-Impostazioni iniziali: **40 ore/settimana**, **29 giorni** di ferie + ex festività utilizzate, **32 ore** di altri permessi e **9,8 giorni** di festività/patrono come media convenzionale modificabile.
+Impostazioni iniziali: RAL **30.000 €**, **40 ore/settimana**, **27 giorni** di ferie + ex festività utilizzate, **38 ore** di altri permessi, **1 giorno di smart working a settimana senza buono** e **9,8 giorni** di festività/patrono come media convenzionale modificabile.
 
 L'input dei permessi in ore **esclude** le ex festività già inserite nel conteggio dei giorni. Le formule non ricostruiscono ogni calendario reale, turnazione, part-time verticale, malattia o maternità.
 
@@ -725,18 +727,30 @@ K = Disponibilità_corrente
 **Uso nell'interfaccia (v3.3).** Questa identità è la struttura delle tre card della Dashboard 2 e dei box di aumento della Dashboard 1:
 
 ~~~text
-① Netto utilizzabile          = N + V + W
-② Previdenza differita, lordo = P_l + P_d + Q          (fondo + TFR, dovunque destinato)
-③ Imposte e contributi        = (T − F) + C_l + (C_d + INAIL_stimata) + Solidarietà_azienda
-Costo aziendale K             = ① + ② + ③
+G  = Imposte_future_stimate = Base_imponibile_fondo_illustrativa × aliquota_uscita_fondo
+                            + TFR_fuori_fondo × aliquota_TFR_manualizzata        (§13)
+IVS_d = A × aliquota_IVS_datore                       (23,81% nel profilo iniziale)
+
+① Netto utilizzabile                 = N + V + W
+② Previdenza, netto stimato          = P_l + P_d + Q − G
+③ Contributi pensionistici IVS       = C_l + IVS_d
+④ Imposte e assicurazioni sociali    = (T − F) + G + (C_d − IVS_d) + INAIL_stimata + Solidarietà_azienda
+Costo aziendale K                    = ① + ② + ③ + ④
 ~~~
 
-La sezione ③ contiene **solo** prelievi: i contributi e le imposte riferibili a fondo e TFR (es. Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale) sono lì, mentre i versamenti al fondo e il TFR stanno una sola volta in ②. Le righe «netto ipotetico» di fondo e TFR (§13) sono informative e non entrano nei totali. La barra di composizione mostra cinque colori: netto (①), previdenza (②), imposte nette, contributi lavoratore, contributi azienda+INAIL+solidarietà (③). Se una componente è negativa (es. F > T a redditi bassi) la barra rappresenta solo le parti positive e lo segnala.
+**Perché IVS separata (v3.6).** Nel sistema contributivo l'aliquota di computo del lavoro dipendente è il 33% (23,81% azienda + 9,19% lavoratore): l'intera quota IVS viene accreditata sul montante individuale, che determina la pensione. Invalidità e superstiti sono finanziate dalla stessa contribuzione e non hanno un'aliquota separata. Il legame fra versato e prestazione è quindi diretto, ma non è un risparmio: la gestione è a ripartizione e il valore dipende da rivalutazione (PIL nominale), coefficienti di trasformazione ed età di uscita, fissati per legge. Il simulatore non stima quel valore. Il contributo aggiuntivo dell'1% oltre la prima fascia (56.224 € nel 2026) è giuridicamente IVS ed è incluso in ③; non è stata trovata una fonte ufficiale che chiarisca se accresca il montante, e la nota informativa lo segnala come non verificato. Le altre aliquote datoriali (NASpI, malattia, maternità, CUAF, FIS, fondi interprofessionali, Fondo garanzia TFR), l'INAIL e la solidarietà sul fondo finanziano coperture e servizi senza accumulo individuale: sono in ④ con le imposte.
+
+
+La quota di ciascuna sezione è mostrata, a scelta, sul **costo aziendale** (predefinito: ①+②+③ = 100%) o sulla **RAL** (①+②+③ = K/R, maggiore del 100%). **Valore per te (v3.7).** Un selettore unico per le tre card sceglie il valore principale: ① (netto utilizzabile), ① + ② (con la previdenza complementare e il TFR, al netto stimato) oppure ① + ② + ③ (con i contributi pensionistici IVS). Sono ammesse solo somme progressive perché le sezioni sono ordinate dalla più disponibile alla meno certa; ④ è sempre esclusa. I colori seguono la scelta: con ① le tre sezioni hanno colori autonomi (verde, blu viola, blu); con ① + ② le due sezioni sommate diventano due tonalità di verde; con ① + ② + ③ tre tonalità di verde. ④ resta sempre arancione. ③ e ④ compaiono nella barra come blocchi di colore unico e mostrano le sfumature delle singole voci solo quando la sezione è aperta.
+
+Le sezioni ③ e ④ della v3.6 sostituiscono la precedente sezione unica «Imposte e contributi». Dalla v3.4 la sezione ② è **al netto** delle imposte future stimate, e quelle imposte sono spostate in ③: così ③ raccoglie *tutti* i prelievi, inclusi quelli riferibili a fondo e TFR (Fondo garanzia TFR dentro C_d, solidarietà 10% sulla quota aziendale, imposta futura sul fondo e sul TFR), e la quota di ② sul costo misura ciò che il lavoratore incasserà in futuro. G è una **stima** con le aliquote illustrative (§13), applicata al flusso dell'anno. La solidarietà, molto piccola, è sommata ai contributi azienda e INAIL (resta visibile nel testo informativo). Le imposte di ③ sono «nette» perché vi si sottraggono trattamento integrativo e somma cuneo (F): sono denaro versato in busta paga, già compreso in N; senza sottrarli l'identità non si chiuderebbe. Nella card la riga «− Bonus fiscali in busta paga» lo rende esplicito.
+
+Nell'interfaccia le tre sezioni sono **chiuse di base** e mostrano accanto il totale e la quota sul costo; aprirne una la apre nelle tre colonne. La barra di composizione mostra sei colori: netto (①), previdenza netta (②), imposte nette, imposte future stimate, contributi lavoratore, contributi azienda+INAIL+solidarietà (③). Se una componente è negativa (es. F > T a redditi bassi) la barra rappresenta solo le parti positive e lo segnala.
 
 Le stesse grandezze, in differenza, formano la scomposizione di un aumento (funzione `deltaParts`):
 
 ~~~text
-ΔK = ΔN + Δ(V+W) + (ΔP_l + ΔP_d + ΔQ) + Δ(T − F) + ΔC_l + Δ(C_d + INAIL + Solidarietà)
+ΔK = ΔN + Δ(V+W) + (ΔP_l + ΔP_d + ΔQ − ΔG) + Δ(T − F) + ΔG + ΔC_l + Δ(C_d + INAIL + Solidarietà)
 ~~~
 
 L'identità è **contabile nel perimetro del modello**: si ottiene sostituendo la definizione di N e cancellando le voci già comprese nella RAL. Non implica che il lavoratore possa monetizzare tutte le assicurazioni sociali o il TFR.
@@ -815,7 +829,9 @@ Aliquota_1000_percento
     = 100 × (1.000 − ΔN − ΔP_l) / 1.000
 ~~~
 
-Curve del grafico (v3.3), raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €):
+Curve del grafico, raggruppate nella legenda; ogni voce riporta il valore alla RAL selezionata (passo R → R + 1.000 €). Dalla v3.4 un interruttore sceglie la **prospettiva**: «Quanto resta in tasca» (predefinita, solo gruppo «Quanto resta», attiva solo Netto su 1.000 € di RAL) oppure «Cuneo» (gruppi lavoratore e azienda; attive di base solo il prelievo marginale e la quota personale al fondo, le altre si accendono dalla legenda).
+
+**Unità dell'asse (v3.5).** Le curve sono espresse in **euro su ogni 1.000 € in più** (di RAL o di costo aziendale, secondo la curva): il valore in euro è la frazione × 1.000, quindi 619 € equivale a un'aliquota del 61,9%. I riepiloghi laterali e i box restano anche in percentuale.
 
 ~~~text
 Lavoratore · dentro la RAL (denominatore ΔR)
@@ -826,10 +842,10 @@ Lavoratore · dentro la RAL (denominatore ΔR)
 
 Azienda · fuori dalla RAL
   Contributi azienda e INAIL  = Δ(C_d + INAIL + Solidarietà) / ΔR   [predefinita]
-  Cuneo marginale sul costo   = Δ(T − F + C_l + C_d + INAIL + Sol.) / ΔK  [opzionale]
+  Cuneo marginale sul costo   = Δ(T − F + G + C_l + C_d + INAIL + Sol.) / ΔK
 
 Quanto resta
-  Netto / ΔRAL                = ΔN / ΔR                       [opzionale]
+  Netto / ΔRAL                = ΔN / ΔR                       [predefinita nella prospettiva «resta»]
   Netto / Δcosto aziendale    = ΔN / ΔK                       [opzionale]
 ~~~
 
@@ -837,7 +853,13 @@ Per costruzione: Prelievo marginale = imposte nette + contributi lavoratore, e N
 
 Il **cuneo marginale** qui definito ha al denominatore l'intero ΔK, che include TFR e quota aziendale al fondo: è coerente con la scomposizione ①②③ ma **non coincide con il tax wedge OCSE**, che misura il costo del lavoro senza TFR e previdenza complementare. Le curve «contributi azienda» e «netto/Δcosto» sostituiscono la precedente «costo aggiuntivo oltre la RAL», che mescolava prelievi e retribuzione differita; è stata rimossa anche la curva «imposte + contributi + fondo», ricavabile come 100% − Netto/ΔRAL.
 
-**Scala verticale.** Il grafico marginale taglia i valori sotto −30% (tipicamente l'ingresso del trattamento integrativo a RAL molto basse, dove ΔF può superare ΔR) e lo segnala con il minimo e la RAL corrispondente. Le tacche sono arrotondate a passi 1/2/2,5/5 × 10ⁿ.
+**Scala verticale.** Dalla v3.5 la scala comprende sempre tutti i valori delle curve visibili, senza tagli, con tacche arrotondate.
+
+**Lo scalino intorno a 9.000–10.000 € di RAL è reale, non un artefatto di calcolo.** Il trattamento integrativo (1.200 €) spetta nel primo tratto solo se I > D_l − 75 (§9.3), cioè da circa 8.200 € di imponibile: superata la soglia, il netto aumenta di colpo di 1.200 €, quindi su +1.000 € di RAL ΔN > ΔR (prelievo marginale negativo, netto/ΔRAL > 100%, e anche ΔN > ΔK). Subito prima, la somma cuneo passa dal 7,1% al 5,3% di tutto Y a 8.500 € (§9.1), con uno scalino opposto. Il passo di 1.000 € spalma su un intervallo ciò che nella norma avviene in un euro. È rilevante solo per redditi annui molto bassi (part-time, anno incompleto). Le tacche sono arrotondate a passi 1/2/2,5/5 × 10ⁿ.
+
+**Maniglie.** Trascinando, RAL e aumento avanzano a passi di 1.000 € (nei campi si può comunque scrivere qualsiasi importo). La RAL di partenza si sposta cliccando o trascinando nel grafico; l'aumento si trascina dal punto verde posto **sopra** l'area del grafico, così le due maniglie restano separabili anche quando si sovrappongono in orizzontale.
+
+**Due netti, un solo motore.** La pagina 01 mostra il **netto dalla sola RAL** (N senza bonus, buoni e welfare), che coincide con la prima riga di ① nella pagina 02. Il passaggio è: netto utilizzabile della pagina 02 = netto dalla sola RAL + bonus netto + welfare + buoni pasto netti. Le curve marginali restano sulla sola RAL, perché bonus e benefit hanno regimi propri e confonderebbero la lettura dell'aliquota.
 
 **Riepiloghi a destra del grafico e box sottostanti.** Per lo scenario +1.000 € e per l'aumento personalizzato ΔR_p si mostrano: ΔN, ΔN/ΔR, ΔN/ΔK, prelievo marginale e ΔK. I box di dettaglio aggiungono la scomposizione completa di ΔK (barra + tabella in € , % di ΔR e % di ΔK) e i livelli medi prima/dopo (RAL, N, K, N/R, N/K).
 
@@ -909,7 +931,7 @@ Il simulatore non ricostruisce:
 
 1. **Aliquote datore**: 29,31% + INAIL è un esempio modificabile, non una previsione esatta per ogni datore.
 2. **Fuori Roma**: addizionali inizialmente nulle se non inserite; le aliquote uniche non equivalgono a un motore comunale completo.
-3. **TFR**: il recupero dello 0,50% usa A, anche quando il bonus non è utile al TFR; verificare su cedolini reali.
+3. **TFR**: il recupero dello 0,50% usa A (imponibile previdenziale), anche quando il bonus non è utile al TFR: è la regola di legge; restano fuori rivalutazioni e anni precedenti.
 4. **Fondo**: quote calcolate sull'intera RAL e spettanza aziendale non verificata rispetto al versamento minimo contrattuale.
 5. **Tassazione futura**: 15/12/9/23% e aliquota TFR manuale producono **scenari su un flusso annuale**, non una liquidazione certa.
 6. **Bonus**: le condizioni agevolative sono flag dell'utente; non equivalgono a un controllo della documentazione contrattuale.
@@ -965,11 +987,40 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v3.3**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v3.9**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v3.9**
+- Colori di ①②③ guidati dal perimetro «Valore per te» al posto della trasparenza; ② blu viola e ③ blu anche nei box della pagina 01.
+- Rimossa la nota sulla pensione pubblica accanto al valore ①+②+③.
+
+**v3.8**
+- Campo svuotato = 0 (nessun errore; il valore 0 viene scritto quando si esce dal campo). Passo minimo 1 per frecce e pulsanti, tranne nei parametri fiscali.
+- Barra di composizione senza spostamenti quando si apre una sezione; «100%» senza decimale; campi della retribuzione allineati.
+- Controllo generale dei calcoli: costo e netto ricostruiti a mano coincidono con il motore al centesimo; verificate sulle fonti ufficiali l'addizionale Lazio 2026 (1,73% fino a 28.000 €; oltre, 1,73% fino a 15.000 € e 3,33% sul resto; detrazione 60 € fra 28.001 e 30.000 €), la soglia dell'1% aggiuntivo (56.224 €) e la base del recupero 0,50% sul TFR.
+
+**v3.7**
+- Selettore «Valore per te: ① · ①+② · ①+②+③»; barra con colori pieni per ③ e ④, sfumature solo a sezione aperta.
+- Campi numerici: la rotellina non cambia i valori; frecce e pulsanti avanzano di un passo proporzionale (10^(cifre intere − 2): 2.000 → ±100, 543 → ±10, 30 → ±1; minimo 0,5 per lo smart working).
+- Permessi iniziali: 38 ore.
+
+**v3.6**
+- Sezione ③ «Contributi pensionistici IVS» (parte lavoratore e parte azienda, blu) separata da ④ «Imposte e assicurazioni sociali» (arancione); stessa scomposizione nei box degli aumenti della pagina 01.
+- Decimali a grandezza piena nella card oraria.
+- Valori iniziali: RAL 30.000 €, 27 giorni di ferie ed ex festività, 1 giorno di smart working a settimana.
+
+**v3.5**
+- Asse del grafico marginale in euro su 1.000 € e scala senza tagli; vista «Cuneo» con attivi solo prelievo marginale e quota personale al fondo; legenda dei valori annui nello stesso stile, con importi alla RAL selezionata.
+- Pagina 02: rimosso il rapporto sulla RAL accanto a quello sul costo; selettore «Percentuali su: costo aziendale | RAL» per tutte le quote delle card.
+
+**v3.4**
+- ② al netto delle imposte future stimate, spostate in ③; solidarietà accorpata ai contributi azienda e INAIL; sezioni ①②③ richiudibili con totale e quota affiancati; «= 100%» sul costo.
+- Corretto il bug per cui le aliquote illustrative di fondo e TFR non si aggiornavano.
+- Pagina 01: prospettiva «quanto resta» (predefinita) / «cuneo»; scala −30%/110% con marcatori; maniglia dell'aumento sopra il grafico; etichette dell'asse sotto la barra RAL; casella dell'aumento accanto al titolo; netto rinominato «dalla sola RAL» con collegamento alla pagina 02.
+- Pagina 02: costo per voce e prospetto analitico affiancati; spiegazioni come ⓘ; aliquote datoriali mostrate accanto alle singole voci.
 
 **v3.3** — nessuna formula del motore `calculate` è cambiata; cambiano presentazione e indicatori derivati.
 - Grafico marginale: scomposizione predefinita del prelievo (imposte nette + contributi lavoratore) e contributi a carico dell'azienda; nuove curve opzionali cuneo marginale sul costo, netto/ΔRAL, netto/Δcosto; legenda raggruppata con valori alla RAL selezionata; scala con tacche arrotondate e taglio sotto −30%.
