@@ -216,6 +216,17 @@
 .combined-chart .chart-header>div:first-child{max-width:720px;min-width:0}
 .combined-chart .chart-header .view-switch{grid-column:2;grid-row:1;width:auto;justify-self:end}
 @media(max-width:650px){.combined-chart .chart-header{grid-template-columns:1fr}.combined-chart .chart-header .view-switch{grid-column:1;grid-row:1;width:100%}.combined-chart .chart-header>div:first-child{grid-row:2}}
+
+/* v3.5.2: card più leggibili */
+.pay-view h3{font-size:19px;letter-spacing:-.2px}
+.pay-view .hero-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0 3px}
+.pay-view .hero-line .hero-value{margin:0}
+.pay-view .hero-share{background:#edf7f3;border-radius:8px;padding:6px 10px;font-size:10.5px;color:#3d6b5a;line-height:1.25;text-align:right;white-space:nowrap}
+.pay-view .hero-share b{display:block;font-size:16px;color:#176c55;font-variant-numeric:tabular-nums}
+.pay-view .dec{font-size:.72em;font-weight:inherit;letter-spacing:0}
+.pay-view .hero-value .dec{font-size:.6em}
+.pay-sec-head .sec-fig em{font-weight:500}
+.pay-view .unit-note{min-height:0;margin-bottom:4px}
 </style></head><body>
 <header class="top"><div class="tophead"><div><div class="brand">Atlante / Finanza personale</div><h1>Lo stipendio, voce per voce.</h1><p class="subtitle">Dalla RAL al netto, dal tempo lavorato al valore del tuo pacchetto.</p></div><div class="download-box"><div class="tag">ITALIA · SNAPSHOT 2026</div><button class="btn secondary download-button" id="downloadHtml" type="button">↓ Scarica HTML</button><p class="download-note">Salva una copia del simulatore con tutti i dati inseriti, da riaprire e modificare.</p></div></div></header><div class="sticky-nav"><nav class="tabs" aria-label="Sezioni del simulatore"><button class="tab active" data-page="curves" aria-pressed="true">01 · Crescita e tassazione</button><button class="tab" data-page="package" aria-pressed="false">02 · Stipendio e previdenza</button></nav><button class="top-link" id="backToTop" type="button" aria-label="Torna all’inizio" title="Torna all’inizio" hidden>↑</button></div>
 <main><details class="card profile"><summary>Profilo fiscale e contributivo <small id="profileLabel"></small></summary><div class="fields four">
@@ -509,13 +520,15 @@ function payComponents(p,o,r){
 // Sezioni ①②③ chiuse di base; aprirne una la apre nelle tre colonne e lo stato sopravvive ai ricalcoli.
 const openSecs={s1:false,s2:false,s3:false};let pctBase='cost';
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details.pay-sec'))return;const k=d.dataset.sec;if(openSecs[k]===d.open)return;openSecs[k]=d.open;document.querySelectorAll('details.pay-sec[data-sec="'+k+'"]').forEach(x=>{if(x.open!==d.open)x.open=d.open;});},true);
+// Importo con decimali ridotti graficamente: «29.171» grande, «,84 €» piccolo.
+function money(v){return eur(v,2).replace(/,(\d{2})/,'<span class="dec">,$1</span>');}
 function newPayCard(title,d,subtitle,items,months,r,p,t){
  const ctl=months?'<div class="month-choice"><span>n° mensilità</span><div class="month-switch" aria-label="Numero di mensilità">'+[12,13,14].map(n=>'<button type="button" data-month="'+n+'" class="'+(chosenMonths===n?'active':'')+'" aria-pressed="'+(chosenMonths===n)+'">'+n+'</button>').join('')+'</div></div>':'';
  // ① netto utilizzabile + ② previdenza differita al netto delle imposte future stimate + ③ imposte (anche future) e contributi = costo aziendale.
  const L=deltaParts(ZERO,r),ds=deferredSplit(r),f=futureRates(),usable=items.reduce((a,v)=>a+v[1],0),deferred=L.dDef,levies=L.dLev,cost=r.cost;
  const base=pctBase==='ral'?r.ral:cost,baseLabel=pctBase==='ral'?'della RAL':'del costo aziendale',share=v=>base?pct(v/base):'—';
- const row=(name,v,note='',cls='',color='')=>'<div class="payrow '+cls+'"><span>'+(color?'<i class="swatch" style="background:'+color+'"></i>':'')+name+(note?'<small class="payhint" title="'+note+'"> ⓘ</small>':'')+'</span><b>'+eur(v/d,2)+'</b></div>';
- const sec=(k,n,label,v,body)=>'<details class="pay-sec '+k+'" data-sec="'+k+'"'+(openSecs[k]?' open':'')+'><summary class="pay-sec-head '+k+'"><span class="sec-num">'+n+'</span><span class="sec-label">'+label+'</span><span class="sec-fig"><b>'+eur(v/d,2)+'</b><em>'+share(v)+'</em></span><span class="sec-caret" aria-hidden="true">▾</span></summary><div class="sec-body">'+body+'</div></details>';
+ const row=(name,v,note='',cls='',color='')=>'<div class="payrow '+cls+'"><span>'+(color?'<i class="swatch" style="background:'+color+'"></i>':'')+name+(note?'<small class="payhint" title="'+note+'"> ⓘ</small>':'')+'</span><b>'+money(v/d)+'</b></div>';
+ const sec=(k,n,label,v,body)=>'<details class="pay-sec '+k+'" data-sec="'+k+'"'+(openSecs[k]?' open':'')+'><summary class="pay-sec-head '+k+'"><span class="sec-num">'+n+'</span><span class="sec-label">'+label+'</span><span class="sec-fig"><b>'+money(v/d)+'</b><em>'+share(v)+'</em></span><span class="sec-caret" aria-hidden="true">▾</span></summary><div class="sec-body">'+body+'</div></details>';
  const hints=['= netto in denaro della pagina 01 alla stessa RAL',''];
  const s1=items.map(([name,v],i)=>row(name,v,hints[i]||'')).join('');
  const s2=(r.pensionWorker>0?row('Fondo · quota personale',r.pensionWorker,'Trattenuta dalla RAL: riduce il netto in denaro, ma resta risparmio del lavoratore'):'')
@@ -531,17 +544,15 @@ function newPayCard(title,d,subtitle,items,months,r,p,t){
   +row('Contributi lavoratore',r.contrib,'Trattenuti dalla RAL','',COMP.worker)
   +row('Contributi azienda, INAIL e solidarietà',r.employer+r.inail+r.solidarity,'Oltre la RAL. Comprendono Fondo garanzia TFR, INAIL '+eur(r.inail/d,2)+' e solidarietà 10% sulla quota azienda al fondo '+eur(r.solidarity/d,2),'',COMP.employer);
  return '<article class="pay-view"><div class="payhead"><h3>'+title+'</h3>'+ctl+'</div>'
- +'<div class="pay-reference"><span title="RAL contrattuale: bonus lordo escluso. Il bonus è conteggiato nel netto e nel costo aziendale.">RAL contrattuale ⓘ</span><b>'+eur(r.ral/d,2)+'</b></div>'
+ +'<div class="pay-reference"><span title="RAL contrattuale: bonus lordo escluso. Il bonus è conteggiato nel netto e nel costo aziendale.">RAL contrattuale ⓘ</span><b>'+money(r.ral/d)+'</b></div>'
  +'<div class="pay-main-label">NETTO UTILIZZABILE · DENARO E BENEFIT</div>'
- +'<strong class="hero-value">'+eur(usable/d,2)+'</strong><div class="unit-note">'+subtitle+' · benefit al nominale</div>'
- +'<div class="pay-ratios"><span><b>'+share(usable)+'</b>'+baseLabel+'</span></div>'
+ +'<div class="hero-line"><strong class="hero-value">'+money(usable/d)+'</strong><span class="hero-share"><b>'+share(usable)+'</b>'+baseLabel+'</span></div><div class="unit-note">'+subtitle+' · benefit al nominale</div>'
  +'<div class="pay-comp"><div class="comp-caption">Composizione del costo aziendale</div>'+compBar(compParts(L),cost)+'</div>'
  +'<div class="pay-rows">'
  +sec('s1','①','Netto utilizzabile',usable,s1)
  +sec('s2','②','Previdenza · netto stimato',deferred,s2)
  +sec('s3','③','Imposte e contributi',levies,s3)
- +'<div class="pay-total-cost"><span><b>Costo complessivo per l’azienda</b><small>① + ② + ③ = '+share(cost)+' '+baseLabel+'</small></span><b>'+eur(cost/d,2)+'</b></div>'
- +'<p class="pay-footnote">Apri ①②③ per il dettaglio. Le percentuali sono sulla base scelta in alto: sulla RAL la somma supera il 100%, perché il costo aziendale è maggiore della RAL. La RAL è dentro il costo: contributi lavoratore e quota personale al fondo sono trattenuti dalla RAL e compaiono una sola volta. Le imposte future su fondo e TFR sono stime con le aliquote scelte sotto.</p>'
+ +'<div class="pay-total-cost"><span><b>Costo complessivo per l’azienda</b><small>① + ② + ③ = '+share(cost)+' '+baseLabel+'</small></span><b>'+money(cost/d)+'</b></div>'
  +'</div></article>';
 }
 function redrawNewPackage(p){
