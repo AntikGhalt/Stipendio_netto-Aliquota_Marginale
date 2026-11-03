@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.4, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.5, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -1008,11 +1008,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.4**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.5**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.5**
+- Retribuzione, bonus e TFR come tre box con la stessa struttura (campo, menu, riga di stato, tendina ⓘ) e righe allineate; il regime del bonus e la destinazione del TFR diventano menu a tendina; il TFR maturato è un campo in sola lettura.
+- Nota sui familiari a carico riscritta (chi indicare, limiti di reddito, quota) e mostrata come riquadro sovrapposto.
 
 **v4.4**
 - Retribuzione e benefit: RAL, welfare e buoni pasto in colonna a sinistra, bonus e TFR affiancati a destra; cifra della RAL meno pesante.
