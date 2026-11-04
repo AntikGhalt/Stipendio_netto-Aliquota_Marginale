@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.6, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.7, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -432,52 +432,51 @@ Nel riepilogo del costo del lavoro, quando si parla di **imposte nette dei benef
 
 ---
 
-## 10. Addizionali regionale e comunale
+## 10. Addizionali regionale e comunale (v4.7)
 
-Le addizionali sono calcolate soltanto se **IRPEF netta > 0**. Le regole incorporano un profilo **Roma–Lazio**; per le altre regioni la selezione non scarica automaticamente le delibere locali.
+Le addizionali sono calcolate soltanto se **IRPEF netta > 0**, sulla base imponibile Y. L'utente sceglie **regione** (Trento e Bolzano sono distinte) e **comune di residenza**; le aliquote 2026 sono applicate automaticamente.
 
-### 10.1 Roma–Lazio incorporata nel codice
+### 10.1 Fonte dei dati
 
-~~~text
-Regionale Lazio:
-  Se Y <= 28.000:
-      Regione = 1,73% × Y
-  Altrimenti:
-      Regione = 1,73% × 15.000 + 3,33% × (Y − 15.000)
-      − 60 € se 28.001 <= Y <= 30.000
+Dipartimento delle Finanze, **elenchi generali in CSV** delle addizionali (pagine «Elenchi generali» di addizionale regionale e comunale), scaricati il 4 novembre 2026:
 
-Comunale Roma:
-  Se Y <= 14.000: Comune = 0
-  Altrimenti:      Comune = 0,9% × Y
-~~~
+- **Regionali:** elenco 2026 (aggiornato al 19/06/2026), 21 enti. Per Puglia e Molise vale la delibera più recente (rideterminazione del commissario ad acta per il disavanzo sanitario).
+- **Comunali:** elenco 2026 per 7.897 comuni. Il CSV riporta «0*» per i comuni che, alla data, non hanno pubblicato la delibera 2026: in questo caso si applica la regola dell'elenco 2025 (le aliquote restano in vigore fino a nuova delibera; nell'elenco 2025, definitivo, «0*» indica addizionale non istituita). Risultato: 4.057 comuni con delibera 2026, 2.956 con regola 2025 confermata, 884 senza addizionale.
 
-Il superamento dell'esenzione comunale **non** determina nel modello una tassazione della sola differenza sopra 14.000 €: applica la percentuale all'intero imponibile Y. Queste formule descrivono esattamente lo snapshot implementato; per usi fiscali puntuali vanno confrontate con le delibere dell'anno pertinente.
+### 10.2 Regola comunale
 
-### 10.2 Altre regioni e comuni
-
-La selezione geografica diversa da Roma attiva un profilo manuale con quattro input:
-
-- Aliquota regionale unica.
-- Aliquota comunale unica.
-- Esenzione regionale fino a un determinato reddito.
-- Esenzione comunale fino a un determinato reddito.
-
-Il calcolo effettuato è:
+Per ogni comune è memorizzata una delle forme previste dal MEF:
 
 ~~~text
-Regione = Y × aliquota_regionale    se Y > esenzione_regionale, altrimenti 0
-Comune  = Y × aliquota_comunale     se Y > esenzione_comunale, altrimenti 0
+Aliquota unica:         Comune = Y × aliquota
+Aliquote a scaglioni:   Comune = Σ_k (quota di Y nello scaglione k) × aliquota_k
+Soglia di esenzione:    Comune = 0 se Y ≤ soglia; altrimenti la formula sopra su tutto Y
 ~~~
 
-Le aliquote iniziali di questi campi sono **0%**: se non sono compilate, il netto può risultare sovrastimato. Una singola aliquota con soglia di esenzione **non riproduce** necessariamente aliquote progressive, esenzioni condizionate o regole specifiche degli altri enti locali.
+La soglia è un'esenzione, non una franchigia: superata, si paga sull'intero imponibile. Sono segnalati come **casi particolari** (117 comuni) quelli con esenzioni riservate a categorie (pensionati, dipendenti…) o con dati incoerenti nell'elenco MEF: per questi si applicano le aliquote senza l'esenzione per categoria e l'interfaccia invita a verificare la delibera (link diretto alla pagina MEF del comune).
 
-**Interfaccia (v3.3).** Il menu separa «Calcolo incorporato» (Roma) da «Aliquote da inserire · dati MEF» (le 20 regioni; per il Lazio, «comuni diversi da Roma»). Scegliendo un territorio manuale i quattro campi compaiono subito sotto il menu, con i collegamenti MEF; se entrambe le aliquote sono a zero, il menu e l'intestazione del profilo mostrano un avviso.
+### 10.3 Regola regionale
 
-**Importante:** la scelta di una regione non individua automaticamente il comune; la simulazione fuori Roma è una **approssimazione manuale**, non un calcolo territoriale certificato.
+Gli scaglioni sono quelli dell'elenco 2026, applicati in modo progressivo. Le disposizioni speciali scritte nel campo «disposizione» sono codificate a mano:
 
-Riferimenti esterni disponibili nell'interfaccia: [MEF — addizionali comunali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm) e [MEF — addizionali regionali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm).
+| Ente | Regola 2026 implementata |
+|---|---|
+| Lazio | 1,73% su tutto Y fino a 28.000 €; oltre, 1,73% fino a 15.000 € e 3,33% sul resto; −60 € tra 28.001 e 30.000 € |
+| Umbria | 1,23% su tutto Y fino a 28.000 €; oltre, 1,73 / 3,02 / 3,12 / 3,33% a scaglioni, −150 € fino a 50.000 € |
+| Friuli-Venezia Giulia | 0,70% su tutto Y fino a 15.000 €; oltre, 1,23% su tutto Y |
+| Valle d'Aosta | esenzione fino a 15.000 €; oltre, 1,23% su tutto Y |
+| Provincia di Trento | nessuna addizionale fino a 30.000 € (deduzione di 30.000 €); oltre, 1,23% fino a 50.000 € e 1,73% sul resto |
+| Provincia di Bolzano | 1,23% fino a 50.000 € e 1,73% oltre; −430,50 € fino a 90.000 €; oltre 50.000 € ulteriore −125 € × (Y − 50.000)/25.000, massimo 125 € |
 
----
+Non sono applicate le agevolazioni regionali legate a figli, disabilità o categorie particolari (es. Campania, Piemonte, Puglia, Marche, Veneto, Sardegna, detrazioni per figli di Trento e Bolzano): il campo figli del simulatore conta solo i figli con detrazione IRPEF (21–29 anni), mentre queste agevolazioni usano definizioni diverse. L'interfaccia lo indica nella sezione «Aliquote applicate».
+
+### 10.4 Aliquote personalizzate
+
+La scelta «Aliquote personalizzate» sospende il calcolo automatico e usa quattro input: aliquota regionale unica, aliquota comunale unica e le rispettive soglie di esenzione (Regione = Y × aliquota se Y > soglia, altrimenti 0; idem per il comune).
+
+### 10.5 Verifica
+
+Con la configurazione iniziale (Roma, Lazio) il netto è identico a quello delle versioni precedenti, che incorporavano Roma–Lazio a mano. Controlli a campione ricostruiti a mano: Milano (Lombardia a scaglioni; comune 0,8% con esenzione fino a 23.000 €) e Torino (Piemonte a scaglioni; comune a quattro scaglioni con esenzione fino a 11.790 €).
 
 ## 11. Imposte finali e netto monetario
 
@@ -1008,11 +1007,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.6**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.7**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.7**
+- Addizionali regionali e comunali 2026 automatiche da regione e comune (dati MEF incorporati per 7.897 comuni e 21 enti regionali); aliquote personalizzate come alternativa; sezione «Aliquote applicate» per la verifica, con link alla delibera.
+- Profilo su tre box (territorio, familiari, fondo pensione); coniuge di nuovo come menu; detrazioni automatiche spostate nei parametri modificabili; icona ⚙︎ per i riquadri che contengono opzioni.
 
 **v4.6**
 - Spiegazioni ⓘ come riquadri sovrapposti (senza freccia e senza spostare il contenuto); su mobile pannello in basso.

@@ -13,7 +13,7 @@ Le formule sono documentate in [METODOLOGIA_CALCOLI.md](./METODOLOGIA_CALCOLI.md
 
 ## Parametri e limiti
 - Il profilo fiscale e la RAL sono condivisi.
-- Le addizionali Roma–Lazio sono incorporate. Per altri territori occorre inserire le aliquote, facendo riferimento ai dati MEF; la modalità manuale non simula automaticamente scaglioni/esenzioni locali articolate.
+- Le addizionali regionali e comunali 2026 si applicano in automatico scegliendo regione e comune (dati del Dipartimento delle Finanze incorporati nel file); resta possibile inserire aliquote personalizzate.
 - Le percentuali contributive aziendali sono un **profilo di stima modificabile**, non aliquote universali.
 - Le simulazioni della liquidazione futura di TFR e fondo pensione sono indicative, non previsioni né importi subito riscattabili.
 - I benefit sono valorizzati nominalmente: non sempre equivalgono a contanti.
