@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.7, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.8, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -1007,11 +1007,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.7**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.8**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.8**
+- Profilo: territorio, fondo pensione e familiari in tre box di pari altezza, con i link informativi allineati in fondo; «Aliquote applicate» come riquadro sovrapposto che contiene anche i campi delle aliquote personalizzate e il pulsante «Usa queste aliquote».
+- Costo aziendale per voce e prospetto dal lordo al netto riuniti in un'unica tendina di approfondimento.
 
 **v4.7**
 - Addizionali regionali e comunali 2026 automatiche da regione e comune (dati MEF incorporati per 7.897 comuni e 21 enti regionali); aliquote personalizzate come alternativa; sezione «Aliquote applicate» per la verifica, con link alla delibera.
