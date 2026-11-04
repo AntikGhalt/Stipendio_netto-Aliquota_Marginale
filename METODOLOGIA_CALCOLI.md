@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.5, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v4.6, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -125,7 +125,7 @@ Sono valori iniziali **modificabili**: descrivono un dipendente privato ordinari
 
 **Attenzione:** 23,81% è soltanto la quota IVS aziendale, **non** il totale dei contributi che l'azienda versa. Il 29,31% è la somma delle componenti selezionate nel profilo iniziale; **non è un'aliquota universale**. INAIL viene aggiunta separatamente.
 
-I valori percentuali del fondo sono applicati **convenzionalmente all'intera RAL**. I CCNL possono prevedere basi diverse (minimi tabellari, retribuzione utile al TFR ecc.) e subordinare il contributo datoriale a un versamento minimo del dipendente. Il simulatore consente di cambiare le percentuali ma **non verifica automaticamente l'adesione minima prevista dal CCNL**.
+I valori percentuali del fondo sono applicati **convenzionalmente all'intera RAL**. I CCNL possono prevedere basi diverse (minimi tabellari, retribuzione utile al TFR ecc.) e subordinare il contributo datoriale a un versamento minimo del dipendente. Il simulatore consente di cambiare le percentuali ma **non verifica automaticamente l'adesione minima prevista dal CCNL**. Un riquadro propone i minimi di alcuni CCNL e li inserisce nei campi con un clic: Terziario Confcommercio · Fon.Te. 0,55% / 1,55%; Metalmeccanici · Cometa 1,20% / 2,00%; Chimico-farmaceutico · Fonchim 1,20% / 2,10% (manuale operativo aziende, febbraio 2026); Alimentare · Alifond 1,00% / 1,50% (fonti secondarie, da verificare sul CCNL); Tessile-abbigliamento · Previmoda 1,50% / 2,30% (da luglio 2026). Nei contratti la base può essere il minimo tabellare o la retribuzione utile al TFR; qui si applicano alla RAL.
 
 ---
 
@@ -1008,11 +1008,16 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.5**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v4.6**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v4.6**
+- Spiegazioni ⓘ come riquadri sovrapposti (senza freccia e senza spostare il contenuto); su mobile pannello in basso.
+- Profilo: territorio, coniuge, figli e detrazioni su 2×2 a sinistra, fondo pensione a destra; coniuge come interruttore No/Sì; figli da menu 0–6 o «altro numero».
+- Tabella dei minimi CCNL con pulsante «Usa» (aggiunti Fonchim e Alifond); spiegazione del fondo pensione riscritta.
 
 **v4.5**
 - Retribuzione, bonus e TFR come tre box con la stessa struttura (campo, menu, riga di stato, tendina ⓘ) e righe allineate; il regime del bonus e la destinazione del TFR diventano menu a tendina; il TFR maturato è un campo in sola lettura.
