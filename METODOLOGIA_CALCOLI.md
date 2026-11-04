@@ -1,6 +1,6 @@
 # Metodologia di calcolo — Atlante Stipendio
 
-**Versione documentata:** simulatore v4.9, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
+**Versione documentata:** simulatore v5.0, file [index.html](./index.html), anno fiscale di riferimento **2026**.  
 **Scopo:** rendere riproducibili le formule effettivamente eseguite dal codice JavaScript, il significato economico delle grandezze, le ipotesi e le limitazioni.  
 **Natura del documento:** descrizione del modello implementato, **non** certificazione dell'esattezza o dell'aggiornamento di ogni regola tributaria. In caso di discrepanza tra questo testo e il programma, per sapere che cosa il sito *calcola* fa fede il codice; la discrepanza va comunque corretta.
 
@@ -470,11 +470,25 @@ Gli scaglioni sono quelli dell'elenco 2026, applicati in modo progressivo. Le di
 
 Non sono applicate le agevolazioni regionali legate a figli, disabilità o categorie particolari (es. Campania, Piemonte, Puglia, Marche, Veneto, Sardegna, detrazioni per figli di Trento e Bolzano): il campo figli del simulatore conta solo i figli con detrazione IRPEF (21–29 anni), mentre queste agevolazioni usano definizioni diverse. L'interfaccia lo indica nella sezione «Aliquote applicate».
 
-### 10.4 Aliquote personalizzate
+### 10.4 Medie ponderate
+
+Due opzioni evitano di indicare il comune:
+
+- **Media dei comuni della regione** (menu Comune) e **Media nazionale** (menu Regione, che applica la media anche alla parte regionale).
+- Per ogni imponibile Y la media è l'addizionale che paga in media un lavoratore dipendente con quell'imponibile:
+
+~~~text
+Comune_medio(Y) = Σ_c w_c × Comune_c(Y) / Σ_c w_c
+Regione_media_nazionale(Y) = Σ_r W_r × Regione_r(Y) / Σ_r W_r
+~~~
+
+con w_c = numero di contribuenti con reddito da lavoro dipendente residenti nel comune (MEF, open data comunali IRPEF, anno d'imposta 2024; coperto il 99,99% dei dipendenti) e W_r la somma per regione. Si fa la media delle **imposte**, non delle aliquote nominali, perché soglie di esenzione e scaglioni rendono le aliquote non confrontabili. La funzione media è calcolata una volta su una griglia di 250 € (0–200.000 €) e interpolata linearmente; oltre 200.000 € si estende con la pendenza dell'ultimo tratto. Le esenzioni per categorie dei casi particolari non sono considerate.
+
+### 10.5 Aliquote personalizzate
 
 La scelta «Aliquote personalizzate» sospende il calcolo automatico e usa quattro input: aliquota regionale unica, aliquota comunale unica e le rispettive soglie di esenzione (Regione = Y × aliquota se Y > soglia, altrimenti 0; idem per il comune).
 
-### 10.5 Verifica
+### 10.6 Verifica
 
 Con la configurazione iniziale (Roma, Lazio) il netto è identico a quello delle versioni precedenti, che incorporavano Roma–Lazio a mano. Controlli a campione ricostruiti a mano: Milano (Lombardia a scaglioni; comune 0,8% con esenzione fino a 23.000 €) e Torino (Piemonte a scaglioni; comune a quattro scaglioni con esenzione fino a 11.790 €).
 
@@ -1007,11 +1021,15 @@ Le regole e le stime sono documentate anche nel pannello «Metodo, perimetro e f
 ---
 
 **Autore del progetto:** [Paolo Refuto](https://www.linkedin.com/in/paolo-refuto-6a5b52236/).  
-**Stato:** metodologia della **v4.9**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
+**Stato:** metodologia della **v5.0**. Le note metodologiche descrivono la logica esistente; non costituiscono correzioni silenziose del programma.
 
 ---
 
 ## Registro modifiche
+
+**v5.0**
+- Medie ponderate delle addizionali: media dei comuni della regione e media nazionale, pesate per i lavoratori dipendenti residenti (MEF, redditi 2024).
+- Fondo pensione disattivato: i campi restano visibili, in grigio e non modificabili.
 
 **v4.9**
 - Con il coniuge a carico la quota della detrazione figli è mostrata al 100% (campo bloccato); tolto il coniuge torna la scelta precedente.
